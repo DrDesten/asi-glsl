@@ -15,9 +15,9 @@ function activate( context ) {
 	let disposable = vscode.languages.registerDocumentFormattingEditProvider( "glsl", {
 		provideDocumentFormattingEdits( document ) {
 
-			// ASI | Semicolon after structs
+			// Basic ASI (No Semicolon with no preceding content) | Semicolon after structs | Semicolons in single-line curly-brackets '{}' | Semicolons at the end of the string
 			//const asi = /((?<!(struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\n])\s*?)\n(?=[ \t]*[^ .=?+\-*/%<>!&^|,])|(?<=struct\s+\w+\s+{[^{}]+?})\s(?!\s*;))/g
-			const asi = /((?<!(struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\s]))(?=\s*?\n\s*?[^ .=?+\-*/%<>!&^|,({])|(?<=struct\s+\w+\s+{[^{}]+?})\s(?![\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[;\w])|(?<=[^\s{]+)(?=\s*}))/g
+			const asi = /((?<!(^|struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\s]))(?=\s*?\n\s*?[^ .=?+\-*/%<>!&^|,({])|(?<=struct\s+\w+\s+{[^{}]+?})\s(?![\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[;\w])|(?<=[^\s{]+)(?=\s*})|(?<=\w)(?=\s*$))/g
 			const ignore = /\/\/.*|\/\*[^]*?\*\/|#.*/g
 
 			// Replace all areas that should not be parsed with whitspace so that ASI won't match it
@@ -29,7 +29,6 @@ function activate( context ) {
 				if ( priority > 0 ) searchString = searchString.slice( 0, i ) + " " + searchString.slice( i + 1 )
 				if ( char == "(" || char == "[" ) priority++
 			}
-			searchString += "\na"
 
 			// Insert Semicolons at the correct locations
 			/*////////////////////////////////////////////////////////////////////////////////////////////
@@ -43,7 +42,6 @@ function activate( context ) {
 			let edits = []
 			searchString.replace( asi, function () {
 				let index = arguments[ arguments.length - 2 ]
-				if ( index <= 1 ) return
 				//console.log( index )
 				edits.push( vscode.TextEdit.insert( document.positionAt( index ), ";" ) )
 			} )
