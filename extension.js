@@ -23,7 +23,7 @@ function activate( context ) {
 			// Replace all areas that should not be parsed with whitspace so that ASI won't match it
 			/////////////////////////////////////////////////////////////////////////////////////////////
 			let searchString = document.getText().replace( ignore, function ( substr ) { return " ".repeat( substr.length ) } ) // Replace Comments and Preprocessor Directives
-			for ( let i = 0, priority = 0; i < searchString.length; i++ ) {                                 // Replace Content of Parentheses and Brackets '()' and '[]'
+			for ( let i = 0, priority = 0; i < searchString.length; i++ ) {                                                     // Replace Content of Parentheses and Brackets '()' and '[]'
 				let char = searchString.slice( i, i + 1 )
 				if ( char == ")" || char == "]" ) priority--
 				if ( priority > 0 ) searchString = searchString.slice( 0, i ) + " " + searchString.slice( i + 1 )
@@ -35,18 +35,17 @@ function activate( context ) {
 			/*////////////////////////////////////////////////////////////////////////////////////////////
 			Here I hijack the str.replace function:
 			The function I pass in doesn't actually change the string, but modifies the original string. 
-			arguments[3] corresponds to the index, which matches because I replaced all unparsed code with whitespace and didn't delete it.
-			Since the string length increases with each insert, I keep track of this using replaceCount.
-			The semicolon has to be inserted after the first match group, arguments[1], so I add its length to the index
+			arguments[arguments.length - 2] corresponds to the index, which matches because I replaced all unparsed code with whitespace and didn't delete it.
+			Since all insertions happen at once, I do not need to keep track of the size increase of the string.
+			The semicolon has to be inserted at the match. I use lookahead and lookbehind, so all matches are null.
+			The edits array hold all TextEdit objects that will be returned by the function
 			*/
 			let edits = []
-			let replaceCount = 0
 			searchString.replace( asi, function () {
 				let index = arguments[ arguments.length - 2 ]
 				if ( index <= 1 ) return
 				//console.log( index )
 				edits.push( vscode.TextEdit.insert( document.positionAt( index ), ";" ) )
-				replaceCount++
 			} )
 
 			if ( edits.length > 0 ) vscode.window.showInformationMessage( `Added ${edits.length} Semicolon${"s".repeat( edits.length != 1 )}` )
