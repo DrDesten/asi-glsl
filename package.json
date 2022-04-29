@@ -3,7 +3,7 @@
 	"displayName": "ASI for GLSL",
 	"description": "Adds Automatic Semicolon Insertion to GLSL",
 	"publisher": "DrDesten",
-	"version": "0.0.1",
+	"version": "1.0.1",
 	"engines": {
 		"vscode": "^1.66.0"
 	},
