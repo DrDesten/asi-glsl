@@ -4,6 +4,10 @@
 	"description": "Adds Automatic Semicolon Insertion to GLSL",
 	"publisher": "DrDesten",
 	"version": "1.0.1",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/DrDesten/asi-glsl.git"
+	},
 	"engines": {
 		"vscode": "^1.66.0"
 	},
