@@ -16,6 +16,8 @@ function activate( context ) {
 		provideDocumentFormattingEdits( document ) {
 
 			let edits = []
+			const addSemicolons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addSemicolons" )
+			const addIfParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addIfParentheses" )
 
 			// Basic ASI (No Semicolon with no preceding content) | Semicolon after structs | Semicolons in single-line curly-brackets '{}' | Semicolons at the end of the string
 			//const asi = /((?<!(struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\n])\s*?)\n(?=[ \t]*[^ .=?+\-*/%<>!&^|,])|(?<=struct\s+\w+\s+{[^{}]+?})\s(?!\s*;))/g
@@ -29,19 +31,22 @@ function activate( context ) {
 
 			// Replace all comments and preprocessor directives with whitspace so that ASI won't match it
 			/////////////////////////////////////////////////////////////////////////////////////////////
-			let ifs = 0
-			searchString = searchString.replace( ifbrackets, function () {
-				let startindex = arguments[ arguments.length - 2 ]
-				let endindex = startindex + arguments[ 0 ].length
+			if ( addIfParentheses ) {
+				let ifs = 0
+				searchString = searchString.replace( ifbrackets, function () {
 
-				edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), "(" ) )
-				edits.push( vscode.TextEdit.insert( document.positionAt( endindex ), ")" ) )
-				ifs++
+					let startindex = arguments[ arguments.length - 2 ]
+					let endindex = startindex + arguments[ 0 ].length
 
-				return `(${arguments[ 0 ]})`
-			} )
+					edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), "(" ) )
+					edits.push( vscode.TextEdit.insert( document.positionAt( endindex ), ")" ) )
+					ifs++
 
-			if ( ifs > 0 ) vscode.window.showInformationMessage( `Added parentheses to ${ifs} if-statement${"s".repeat( ifs != 1 )}` )
+					return `(${arguments[ 0 ]})`
+				} )
+
+				if ( ifs > 0 ) vscode.window.showInformationMessage( `Added parentheses to ${ifs} if-statement${"s".repeat( ifs != 1 )}` )
+			}
 
 			// Replace Content of Parentheses and Brackets ( '()' and '[]' ) with whitspace so that ASI won't match it
 			/////////////////////////////////////////////////////////////////////////////////////////////
@@ -61,16 +66,17 @@ function activate( context ) {
 			The semicolon has to be inserted at the match. I use lookahead and lookbehind, so all matches are null.
 			The edits array hold all TextEdit objects that will be returned by the function
 			*/
+			if ( addSemicolons ) {
+				let semicolons = 0
+				searchString.replace( asi, function () {
+					let index = arguments[ arguments.length - 2 ]
+					//console.log( index )
+					edits.push( vscode.TextEdit.insert( document.positionAt( index ), ";" ) )
+					semicolons++
+				} )
 
-			let semicolons = 0
-			searchString.replace( asi, function () {
-				let index = arguments[ arguments.length - 2 ]
-				//console.log( index )
-				edits.push( vscode.TextEdit.insert( document.positionAt( index ), ";" ) )
-				semicolons++
-			} )
-
-			if ( semicolons > 0 ) vscode.window.showInformationMessage( `Added ${semicolons} Semicolon${"s".repeat( semicolons != 1 )}` )
+				if ( semicolons > 0 ) vscode.window.showInformationMessage( `Added ${semicolons} Semicolon${"s".repeat( semicolons != 1 )}` )
+			}
 
 			return edits
 		}

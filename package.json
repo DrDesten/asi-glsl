@@ -25,7 +25,19 @@
 	"contributes": {
 		"commands": [],
 		"configuration": {
-			"title": "ASI for GLSL"
+			"title": "ASI for GLSL",
+			"properties": {
+				"asi-glsl.addSemicolons": {
+					"type": "boolean",
+					"default": true,
+					"description": "Extension adds semicolons when formatting"
+				},
+				"asi-glsl.addIfParentheses": {
+					"type": "boolean",
+					"default": false,
+					"description": "Extension adds if argument parentheses when formatting. When this is enabled, parentheses around the argument of an if-statement can be omitted"
+				}
+			}
 		}
 	},
 	"scripts": {
