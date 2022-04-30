@@ -17,7 +17,8 @@
 	"icon": "Icon.png",
 	"keywords": [
 		"asi",
-		"automatic semicolon insertion"
+		"automatic semicolon insertion",
+		"lazy glsl"
 	],
 	"activationEvents": [
 		"onLanguage:glsl"
