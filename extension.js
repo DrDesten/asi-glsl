@@ -17,35 +17,58 @@ function activate( context ) {
 
 			let edits = []
 			const addSemicolons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addSemicolons" )
-			const addIfParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addIfParentheses" )
+			const addArgParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addArgumentParentheses" )
+			const lazyFor = vscode.workspace.getConfiguration( "asi-glsl" ).get( "lazyFor" )
 
 			// Basic ASI (No Semicolon with no preceding content) | Semicolon after structs | Semicolons in single-line curly-brackets '{}' | Semicolons at the end of the string
 			//const asi = /((?<!(struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\n])\s*?)\n(?=[ \t]*[^ .=?+\-*/%<>!&^|,])|(?<=struct\s+\w+\s+{[^{}]+?})\s(?!\s*;))/g
 			const asi = /((?<!(^|struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|atomic_uint|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\s]))(?=\s*?\n\s*?[^ .=?+\-*/%<>!&^|,({])|(?<=struct\s+\w+\s+{[^{}]+?})(?![\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[;\w])|(?<=[^\s{};]+)(?=\s*})|(?<=\w)(?=\s*$))/g
-			const ifbrackets = /(?<=if +(?! *\())[^\n\r{}]*?(?=(?<!\) *) *{)/g
+			const argparentheses = /(?<=(if|for) +(?! |\())[^\n\r{}]*?(?=(?<!\) *) *{)/g
+			const lazyfor = /(?<=for *\(|for +) *((\w*) +)?(\w+) *([<>=!]{1,2}) *(\w+) *?(?=\)| *{)/g
 			const ignore = /\/\/.*|\/\*[^]*?\*\/|#.*/g
 
 			// Replace all comments and preprocessor directives with whitspace so that ASI won't match it
 			/////////////////////////////////////////////////////////////////////////////////////////////
 			let searchString = document.getText().replace( ignore, function ( substr ) { return " ".repeat( substr.length ) } )
 
-			// Replace all comments and preprocessor directives with whitspace so that ASI won't match it
+			// Add parentheses around if and for statements
 			/////////////////////////////////////////////////////////////////////////////////////////////
-			if ( addIfParentheses ) {
-				let ifs = 0
-				searchString = searchString.replace( ifbrackets, function () {
+			if ( addArgParentheses ) {
+				let count = 0
+				searchString = searchString.replace( argparentheses, function () {
 
 					let startindex = arguments[ arguments.length - 2 ]
 					let endindex = startindex + arguments[ 0 ].length
 
 					edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), "(" ) )
 					edits.push( vscode.TextEdit.insert( document.positionAt( endindex ), ")" ) )
-					ifs++
+					count++
 
-					return `(${arguments[ 0 ]})`
+					return arguments[ 0 ]
 				} )
 
-				if ( ifs > 0 ) vscode.window.showInformationMessage( `Added parentheses to ${ifs} if-statement${"s".repeat( ifs != 1 )}` )
+				//if ( count > 0 ) vscode.window.showInformationMessage( `Added parentheses to ${count} if or for statement${"s".repeat( count != 1 )}` )
+			}
+
+			// Lazy for
+			/////////////////////////////////////////////////////////////////////////////////////////////
+			if ( true ) {
+				let count = 0
+				searchString = searchString.replace( lazyfor, function () {
+
+					let startindex = arguments[ arguments.length - 2 ]
+					let endindex = startindex + arguments[ 0 ].length
+
+					let vartype = "int"
+					if ( arguments[ 2 ] != undefined ) vartype = arguments[ 2 ]
+
+					edits.push( vscode.TextEdit.replace( new vscode.Range( document.positionAt( startindex ), document.positionAt( endindex ) ), `${vartype} ${arguments[ 3 ]} = 0; ${arguments[ 3 ]} ${arguments[ 4 ]} ${arguments[ 5 ]}; ${arguments[ 3 ]}++` ) )
+					count++
+
+					return arguments[ 0 ]
+				} )
+
+				//if ( count > 0 ) vscode.window.showInformationMessage( `Added parentheses to ${ifs} if-statement${"s".repeat( count != 1 )}` )
 			}
 
 			// Replace Content of Parentheses and Brackets ( '()' and '[]' ) with whitspace so that ASI won't match it
@@ -67,15 +90,15 @@ function activate( context ) {
 			The edits array hold all TextEdit objects that will be returned by the function
 			*/
 			if ( addSemicolons ) {
-				let semicolons = 0
+				let count = 0
 				searchString.replace( asi, function () {
 					let index = arguments[ arguments.length - 2 ]
 					//console.log( index )
 					edits.push( vscode.TextEdit.insert( document.positionAt( index ), ";" ) )
-					semicolons++
+					count++
 				} )
 
-				if ( semicolons > 0 ) vscode.window.showInformationMessage( `Added ${semicolons} Semicolon${"s".repeat( semicolons != 1 )}` )
+				if ( count > 0 ) vscode.window.showInformationMessage( `Added ${count} Semicolon${"s".repeat( count != 1 )}` )
 			}
 
 			return edits
