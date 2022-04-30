@@ -3,6 +3,7 @@
 
 ## 1.1.0 - Public Release
 - Added license
+- Added Icon
 
 ## 1.0.2
 - Added automatic argument parentheses for `if` and `for` statements. `if x == 0 {}` => `if (x == 0) {}`
