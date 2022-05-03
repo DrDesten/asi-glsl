@@ -36,12 +36,12 @@
 				},
 				"asi-glsl.addArgumentParentheses": {
 					"type": "boolean",
-					"default": false,
+					"default": true,
 					"markdownDescription": "Extension adds argument parentheses to `if` and `for` statements when formatting. Does not work for shorthand syntax."
 				},
 				"asi-glsl.lazyFor": {
 					"type": "boolean",
-					"default": false,
+					"default": true,
 					"markdownDescription": "Shorthand `for` syntax. Extension converts `for (int i < x) {` into `for (int i = 0; i < x; i++) {`. A type for the iterator can be specified, default is `int`."
 				}
 			}

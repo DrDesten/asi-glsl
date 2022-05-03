@@ -24,8 +24,7 @@ function activate( context ) {
 			//const asi = /((?<!(struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\n])\s*?)\n(?=[ \t]*[^ .=?+\-*/%<>!&^|,])|(?<=struct\s+\w+\s+{[^{}]+?})\s(?!\s*;))/g
 			const asi = /((?<!(^|struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|atomic_uint|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\s]))(?=\s*?\n\s*?[^ .=?+\-*/%<>!&^|,({]|\s*$)|(?<=struct\s+\w+\s+{[^{}]+?})(?![\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[;\w])|(?<=[^\s{};]+)(?=\s*}))/g
 			const argparentheses = /(?<=(if|for) +(?! |\())[^\n\r{}]*?(?=(?<!\) *) *{)/g
-			const lazyfor = /(?<=for *\(|for +) *((\w*) +)?(\w+) *([<>=!]{1,2}) *(\w+) *?(?=\)| *{)/g
-			const extralazyfor = /(?<=for\( *|for +\(? *)\w+(?= *\)? *{)/g
+			const lazyfor = /(?<=for +|for *\( *)([\w.]+) *?([\w.]+)? *?([<>!=]{1,2})? *?([\w.]+)?(?= *\)? *{)/g
 			const ignore = /\/\/.*|\/\*[^]*?\*\/|#.*/g
 
 			// Replace all comments and preprocessor directives with whitspace so that ASI won't match it
@@ -46,7 +45,7 @@ function activate( context ) {
 					count++
 				} )
 
-				//if ( count > 0 ) vscode.window.showInformationMessage( `Added parentheses to ${count} if or for statement${"s".repeat( count != 1 )}` )
+				//if ( count > 0 ) vscode.window.showInformationMessage( `Added ${count} parenthese${"s".repeat( count != 1 )}` )
 			}
 
 			// Lazy for
@@ -57,26 +56,30 @@ function activate( context ) {
 
 					let startindex = arguments[ arguments.length - 2 ]
 					let endindex = startindex + arguments[ 0 ].length
+					const replaceRange = new vscode.Range( document.positionAt( startindex ), document.positionAt( endindex ) )
 
-					let vartype = "int"
-					if ( arguments[ 2 ] != undefined ) vartype = arguments[ 2 ]
+					const match1 = arguments[ 1 ] // Variable Type, Name, or interation Count
+					const match2 = arguments[ 2 ] // Variable Name if type is specified
+					const match3 = arguments[ 3 ] // Operator
+					const match4 = arguments[ 4 ] // Interation Count if Variable Name is specified
 
-					edits.push( vscode.TextEdit.replace( new vscode.Range( document.positionAt( startindex ), document.positionAt( endindex ) ), `${vartype} ${arguments[ 3 ]} = 0; ${arguments[ 3 ]} ${arguments[ 4 ]} ${arguments[ 5 ]}; ${arguments[ 3 ]}++` ) )
-					count++
+					let replaceString = ""
+					if ( match1 != undefined && match2 == undefined && match3 == undefined && match4 == undefined ) {
+						replaceString = `int i = 0; i < ${match1}; i++` // Extra-Lazy for: for x {}
+					} else if ( match1 != undefined && match2 == undefined && match3 != undefined && match4 != undefined ) {
+						replaceString = `int ${match1} = 0; ${match1} ${match3} ${match4}; ${match1}++` // Lazy for: for i < x {}
+					} else if ( match1 != undefined && match2 != undefined && match3 != undefined && match4 != undefined ) {
+						replaceString = `${match1} ${match2} = 0; ${match2} ${match3} ${match4}; ${match2}++` // Lazy for: for i < x {}
+					}
+
+					if ( replaceString != "" ) {
+						edits.push( vscode.TextEdit.replace( replaceRange, replaceString ) )
+						count++
+					}
+
 				} )
-				/* searchString.replace( extralazyfor, function () {
 
-					let varname = arguments[ 0 ]
-					if ( varname == "i" ) varname = "o"
-
-					let startindex = arguments[ arguments.length - 2 ]
-					let endindex = startindex + varname.length
-
-					edits.push( vscode.TextEdit.replace( new vscode.Range( document.positionAt( startindex ), document.positionAt( endindex ) ), `int i = 0; i < ${varname}; i++` ) )
-					count++
-				} ) */
-
-				//if ( count > 0 ) vscode.window.showInformationMessage( `Added parentheses to ${ifs} if-statement${"s".repeat( count != 1 )}` )
+				//if ( count > 0 ) vscode.window.showInformationMessage( `${count}x Lazy-For` )
 			}
 
 			// Replace Content of Parentheses and Brackets ( '()' and '[]' ) with whitspace so that ASI won't match it

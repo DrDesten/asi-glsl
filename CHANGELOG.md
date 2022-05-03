@@ -1,6 +1,16 @@
 # Change Log
 
 
+## 1.2.0
+- Improved Lazy `for`
+  - 3 different "laziness levels"
+  - *Variable names instead of numbers are also valid, argument parentheses must not be used when 'Add Argument Parentheses' is enabled*
+  - `for (5) {...}` => `for (int i = 0; i < 5; i++) {...}`
+  - `for (i < 5) {...}` => `for (int i = 0; i < 5; i++) {...}`
+  - `for (int i < 5) {...}` => `for (int i = 0; i < 5; i++) {...}`
+- Improved Readme
+- 'Lazy For' and 'Add Argument Parentheses' options are now on by default, as they don't conflict with any valid syntax
+
 ## 1.1.0 - Public Release
 - Added license
 - Added Icon
