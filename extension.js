@@ -25,6 +25,7 @@ function activate( context ) {
 			const asi = /((?<!(^|struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|atomic_uint|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\s]))(?=\s*?\n\s*?[^ .=?+\-*/%<>!&^|,({]|\s*$)|(?<=struct\s+\w+\s+{[^{}]+?})(?![\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[;\w])|(?<=[^\s{};]+)(?=\s*}))/g
 			const argparentheses = /(?<=(if|for) +(?! |\())[^\n\r{}]*?(?=(?<!\) *) *{)/g
 			const lazyfor = /(?<=for *\(|for +) *((\w*) +)?(\w+) *([<>=!]{1,2}) *(\w+) *?(?=\)| *{)/g
+			const extralazyfor = /(?<=for(\(| +\(?) *)\w+(?= *\)? *{)/g
 			const ignore = /\/\/.*|\/\*[^]*?\*\/|#.*/g
 
 			// Replace all comments and preprocessor directives with whitspace so that ASI won't match it
@@ -63,6 +64,17 @@ function activate( context ) {
 					if ( arguments[ 2 ] != undefined ) vartype = arguments[ 2 ]
 
 					edits.push( vscode.TextEdit.replace( new vscode.Range( document.positionAt( startindex ), document.positionAt( endindex ) ), `${vartype} ${arguments[ 3 ]} = 0; ${arguments[ 3 ]} ${arguments[ 4 ]} ${arguments[ 5 ]}; ${arguments[ 3 ]}++` ) )
+					count++
+
+					return arguments[ 0 ]
+				} )
+
+				searchString = searchString.replace( extralazyfor, function () {
+
+					let startindex = arguments[ arguments.length - 2 ]
+					let endindex = startindex + arguments[ 0 ].length
+
+					edits.push( vscode.TextEdit.replace( new vscode.Range( document.positionAt( startindex ), document.positionAt( endindex ) ), `int i = 0; i < ${arguments[ 0 ]}; i++` ) )
 					count++
 
 					return arguments[ 0 ]
