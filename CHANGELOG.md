@@ -1,6 +1,10 @@
 # Change Log
 
 
+## 1.2.1
+- Added shorthand if support to 'Add Argument Parentheses'
+  - `if x ...` => `if (x) ...` will work, even without curly brackets (of course it has to be a one-liner, since it's shorthand if)
+
 ## 1.2.0
 - Improved Lazy `for`
   - 3 different "laziness levels"
