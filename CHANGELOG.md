@@ -1,5 +1,9 @@
 # Change Log
+  
 
+## 1.2.2
+- Added support for function calls inside of shorthand ifs with 'Add Argument Parentheses'
+  - `if f(x) ...` => `if (f(x)) ...` will work
 
 ## 1.2.1
 - Added shorthand if support to 'Add Argument Parentheses'

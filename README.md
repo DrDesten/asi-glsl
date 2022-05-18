@@ -24,5 +24,5 @@ Changes will not happen while you type.
 
 **Argument Parentheses**  
 `if x {...}` => `if (x) {...}`  
-`if x ...` => `if (x) ...`  *works with shorthand if!*
+`if x ...` => `if (x) ...`  *works with shorthand if!*  
 `for a;b;c {...}` => `for (a;b;c) {...}`  *works with lazy for!*
