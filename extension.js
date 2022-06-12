@@ -22,7 +22,7 @@ function activate( context ) {
 
 			// Basic ASI (no semicolon with no preceding content, no semicolons after variable declarators, no semicolons after operators and brackets) | Semicolon after structs | Semicolons in single-line curly-brackets '{}'
 			//const asi = /((?<!(struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\n])\s*?)\n(?=[ \t]*[^ .=?+\-*/%<>!&^|,])|(?<=struct\s+\w+\s+{[^{}]+?})\s(?!\s*;))/g
-			const asi = /((?<!(^|struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|atomic_uint|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\s]))(?=\s*?\n\s*?[^ .=?+\-*/%<>!&^|,({]|\s*$)|(?<=struct\s+\w+\s+{[^{}]+?})(?![\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[;\w])|(?<=[^\s{};]+)(?=\s*}))/g
+			const asi = /(?<!^|struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|atomic_uint|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=+\-*/%<>!&^|:?,;\s])(?=\s*?\n\s*?[^ .=?+\-*/%<>!&^|,({]|\s*$)|(?<=struct\s+\w+\s+{[^{}]+?})(?![\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[;\w])|(?<=[^\s{};]+)(?=\s*})/g
 			const argparentheses = /(?<=(if|for) +(?! |\())[^\n\r{}]*?(?=(?<!\) *) *{)|(?<=if +)!?[\w.][\w.()]*( *[<>!=|&]{1,2} *!?[\w.][\w.()]*)*(?= +[A-z_])/g
 			const lazyfor = /(?<=for +|for *\( *)([\w.]+) *?([\w.]+)? *?([<>!=]{1,2})? *?([\w.]+)?(?= *\)? *{)/g
 			const ignore = /\/\/.*|\/\*[^]*?\*\/|#.*/g
@@ -37,8 +37,8 @@ function activate( context ) {
 				let count = 0
 				searchString.replace( argparentheses, function () {
 
-					let startindex = arguments[ arguments.length - 2 ]
-					let endindex = startindex + arguments[ 0 ].length
+					let startindex = arguments[arguments.length - 2]
+					let endindex = startindex + arguments[0].length
 
 					edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), "(" ) )
 					edits.push( vscode.TextEdit.insert( document.positionAt( endindex ), ")" ) )
@@ -54,14 +54,14 @@ function activate( context ) {
 				let count = 0
 				searchString.replace( lazyfor, function () {
 
-					let startindex = arguments[ arguments.length - 2 ]
-					let endindex = startindex + arguments[ 0 ].length
+					let startindex = arguments[arguments.length - 2]
+					let endindex = startindex + arguments[0].length
 					const replaceRange = new vscode.Range( document.positionAt( startindex ), document.positionAt( endindex ) )
 
-					const match1 = arguments[ 1 ] // Variable Type, Name, or interation Count
-					const match2 = arguments[ 2 ] // Variable Name if type is specified
-					const match3 = arguments[ 3 ] // Operator
-					const match4 = arguments[ 4 ] // Interation Count if Variable Name is specified
+					const match1 = arguments[1] // Variable Type, Name, or interation Count
+					const match2 = arguments[2] // Variable Name if type is specified
+					const match3 = arguments[3] // Operator
+					const match4 = arguments[4] // Interation Count if Variable Name is specified
 
 					let replaceString = ""
 					if ( match1 != undefined && match2 == undefined && match3 == undefined && match4 == undefined ) {
@@ -103,7 +103,7 @@ function activate( context ) {
 			if ( addSemicolons ) {
 				let count = 0
 				searchString.replace( asi, function () {
-					let index = arguments[ arguments.length - 2 ]
+					let index = arguments[arguments.length - 2]
 					//console.log( index )
 					edits.push( vscode.TextEdit.insert( document.positionAt( index ), ";" ) )
 					count++
@@ -120,7 +120,7 @@ function activate( context ) {
 }
 
 // this method is called when your extension is deactivated
-function deactivate() { }
+function deactivate() {}
 
 module.exports = {
 	activate,
