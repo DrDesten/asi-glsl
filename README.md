@@ -18,9 +18,9 @@ Changes will not happen while you type.
 
 ### Syntax
 **Lazy `for`:**  
-`for (5) {...}` => `for (int i = 0; i < 5; i++) {...}`  
-`for (i < 5) {...}` => `for (int i = 0; i < 5; i++) {...}`  
-`for (int i < 5) {...}` => `for (int i = 0; i < 5; i++) {...}`  
+`for (5) {...}` => `for (int i = 0; i < 5; i++) {...}`
+`for (o < 5) {...}` => `for (int o = 0; o < 5; o++) {...}`
+`for (float o < 5) {...}` => `for (float o = 0; o < 5; o++) {...}`
 
 **Argument Parentheses**  
 `if x {...}` => `if (x) {...}`  

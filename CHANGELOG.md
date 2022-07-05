@@ -2,7 +2,6 @@
   
 ## 1.2.3
 - Fixed ASI adding semicolons after ':', breaking switch(){} statements
-  - `if f(x) ...` => `if (f(x)) ...` will work
 
 ## 1.2.2
 - Added support for function calls inside of shorthand ifs with 'Add Argument Parentheses'
@@ -17,8 +16,8 @@
   - 3 different "laziness levels"
   - *Variable names instead of numbers are also valid, argument parentheses must not be used when 'Add Argument Parentheses' is enabled*
   - `for (5) {...}` => `for (int i = 0; i < 5; i++) {...}`
-  - `for (i < 5) {...}` => `for (int i = 0; i < 5; i++) {...}`
-  - `for (int i < 5) {...}` => `for (int i = 0; i < 5; i++) {...}`
+  - `for (o < 5) {...}` => `for (int o = 0; o < 5; o++) {...}`
+  - `for (float o < 5) {...}` => `for (float o = 0; o < 5; o++) {...}`
 - Improved Readme
 - 'Lazy For' and 'Add Argument Parentheses' options are now on by default, as they don't conflict with any valid syntax
 
