@@ -27,7 +27,7 @@ function activate( context ) {
 			const lazyfor = /(?<=for +|for *\( *)([\w.]+) *?([\w.]+)? *?([<>!=]{1,2})? *?([\w.]+)?(?= *\)? *{)/g
 			const ignore = /\/\/.*|\/\*[^]*?\*\/|#.*/g
 
-			// Replace all comments and preprocessor directives with whitspace so that ASI won't match it
+			// Replace all comments and preprocessor directives with whitespace so that ASI won't match it
 			/////////////////////////////////////////////////////////////////////////////////////////////
 			let searchString = document.getText().replace( ignore, function ( substr ) { return " ".repeat( substr.length ) } )
 
