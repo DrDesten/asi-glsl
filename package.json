@@ -43,6 +43,11 @@
 					"type": "boolean",
 					"default": true,
 					"markdownDescription": "Shorthand `for` syntax. Extension converts `for (int i < x) {` into `for (int i = 0; i < x; i++) {`. A type for the iterator can be specified, default is `int`."
+				},
+				"asi-glsl.lazyConstructors": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Shorthand vector and matrix initialisation syntax. Extension converts `vecn var = 0` into `vecn var = vecn(0)`. Also works with matrix constructors."
 				}
 			}
 		}

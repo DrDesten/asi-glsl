@@ -19,13 +19,14 @@ function activate( context ) {
 			const addSemicolons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addSemicolons" )
 			const addArgParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addArgumentParentheses" )
 			const lazyFor = vscode.workspace.getConfiguration( "asi-glsl" ).get( "lazyFor" )
+			const lazyConstructors = vscode.workspace.getConfiguration( "asi-glsl" ).get( "lazyConstructors" )
 
 			// Basic ASI (no semicolon with no preceding content, no semicolons after variable declarators, no semicolons after operators and brackets) | Semicolon after structs | Semicolons in single-line curly-brackets '{}'
 			//const asi = /((?<!(struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=?+\-*/%<>!&^|,;\n])\s*?)\n(?=[ \t]*[^ .=?+\-*/%<>!&^|,])|(?<=struct\s+\w+\s+{[^{}]+?})\s(?!\s*;))/g
 			const asi = /(?<!^|struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|atomic_uint|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=+\-*/%<>!&^|:?,;\s])(?=\s*?\n\s*?[^ .=?+\-*/%<>!&^|,({]|\s*$)|(?<=struct\s+\w+\s+{[^{}]+?})(?![\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[;\w])|(?<=[^\s{};]+)(?=\s*})/g
 			const argparentheses = /(?<=(if|for) +(?! |\())[^\n\r{}]*?(?=(?<!\) *) *{)|(?<=if +)!?[\w.][\w.()]*( *[<>!=|&]{1,2} *!?[\w.][\w.()]*)*(?= +[A-z_])/g
 			const lazyfor = /(?<=for +|for *\( *)([\w.]+) *?([\w.]+)? *?([<>!=]{1,2})? *?([\w.]+)?(?= *\)? *{)/g
-			const lazyinit = /(?<=((?:u|i)?(?:mat|vec)\d(?:x\d)?)\s+\w+\s*=\s*)(?:\d+\.?\d*|\.\d+)(?:e\d+)?/g
+			const lazyconstructors = /(?<=((?:u|i)?(?:mat|vec)\d(?:x\d)?)\s+\w+\s*=\s*)(?:\d+\.?\d*|\.\d+)(?:e\d+)?/g
 			const ignore = /\/\/.*|\/\*[^]*?\*\/|#.*/g
 
 			// Replace all comments and preprocessor directives with whitespace so that ASI won't match it
@@ -35,7 +36,7 @@ function activate( context ) {
 			// Add parentheses around if and for statements
 			/////////////////////////////////////////////////////////////////////////////////////////////
 			if ( addArgParentheses ) {
-				let count = 0
+				//let count = 0
 				searchString.replace( argparentheses, function () {
 
 					let startindex = arguments[arguments.length - 2]
@@ -43,26 +44,29 @@ function activate( context ) {
 
 					edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), "(" ) )
 					edits.push( vscode.TextEdit.insert( document.positionAt( endindex ), ")" ) )
-					count++
+					//count++
 				} )
 
 				//if ( count > 0 ) vscode.window.showInformationMessage( `Added ${count} parenthese${"s".repeat( count != 1 )}` )
 			}
 
-			searchString.replace( lazyinit, function () {
+			if ( lazyConstructors ) {
+				//let count = 0
+				searchString.replace( lazyconstructors, function () {
 
-				let startindex = arguments[arguments.length - 2]
-				let endindex = startindex + arguments[0].length
+					let startindex = arguments[arguments.length - 2]
+					let endindex = startindex + arguments[0].length
 
-				edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), arguments[1] + "(" ) )
-				edits.push( vscode.TextEdit.insert( document.positionAt( endindex ), ")" ) )
-
-			} )
+					edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), arguments[1] + "(" ) )
+					edits.push( vscode.TextEdit.insert( document.positionAt( endindex ), ")" ) )
+					//count++
+				} )
+			}
 
 			// Lazy for
 			/////////////////////////////////////////////////////////////////////////////////////////////
 			if ( lazyFor ) {
-				let count = 0
+				//let count = 0
 				searchString.replace( lazyfor, function () {
 
 					let startindex = arguments[arguments.length - 2]
@@ -74,18 +78,19 @@ function activate( context ) {
 					const match3 = arguments[3] // Operator
 					const match4 = arguments[4] // Interation Count if Variable Name is specified
 
+
 					let replaceString = ""
-					if ( match1 != undefined && match2 == undefined && match3 == undefined && match4 == undefined ) {
+					if ( match1 && !match2 && !match3 && !match4 ) {
 						replaceString = `int i = 0; i < ${match1}; i++` // Extra-Lazy for: for x {}
-					} else if ( match1 != undefined && match2 == undefined && match3 != undefined && match4 != undefined ) {
+					} else if ( match1 && !match2 && match3 && match4 ) {
 						replaceString = `int ${match1} = 0; ${match1} ${match3} ${match4}; ${match1}++` // Lazy for: for i < x {}
-					} else if ( match1 != undefined && match2 != undefined && match3 != undefined && match4 != undefined ) {
+					} else if ( match1 && match2 && match3 && match4 ) {
 						replaceString = `${match1} ${match2} = 0; ${match2} ${match3} ${match4}; ${match2}++` // Lazy for: for i < x {}
 					}
 
 					if ( replaceString != "" ) {
 						edits.push( vscode.TextEdit.replace( replaceRange, replaceString ) )
-						count++
+						//count++
 					}
 
 				} )
