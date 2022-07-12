@@ -1,7 +1,14 @@
 # Change Log
   
+## 1.3.0
+- Added Lazy Constructors
+  - Automatically puts in constructor in initialisation statements. Only works for numbers as the extension doesn't know about variable types.
+  - `vecn var = 0` => `vecn var = vecn(0)`
+  - `matn var = 0` => `matn var = matn(0)`
+  - `matnxm var = 0` => `matnxm var = matnxm(0)`
+
 ## 1.2.3
-- Fixed ASI adding semicolons after ':', breaking switch(){} statements
+- Fixed ASI adding semicolons after ':', breaking `switch` statements
 
 ## 1.2.2
 - Added support for function calls inside of shorthand ifs with 'Add Argument Parentheses'
