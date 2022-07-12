@@ -25,6 +25,7 @@ function activate( context ) {
 			const asi = /(?<!^|struct|void|uniform|in|out|varying|(i|u)?(sampler|image)([123]D|Cube|2DRect|[12]DArray|CubeArray|Buffer|2DMS|2DMSArray)(Shadow)?|atomic_uint|bool|u?int|float|half|double|(b|i|u|d)?vec[2-4]|d?mat[2-4](x[2-4])?|[{}(\].=+\-*/%<>!&^|:?,;\s])(?=\s*?\n\s*?[^ .=?+\-*/%<>!&^|,({]|\s*$)|(?<=struct\s+\w+\s+{[^{}]+?})(?![\t\f\v \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]*[;\w])|(?<=[^\s{};]+)(?=\s*})/g
 			const argparentheses = /(?<=(if|for) +(?! |\())[^\n\r{}]*?(?=(?<!\) *) *{)|(?<=if +)!?[\w.][\w.()]*( *[<>!=|&]{1,2} *!?[\w.][\w.()]*)*(?= +[A-z_])/g
 			const lazyfor = /(?<=for +|for *\( *)([\w.]+) *?([\w.]+)? *?([<>!=]{1,2})? *?([\w.]+)?(?= *\)? *{)/g
+			const lazyinit = /(?<=((?:u|i)?(?:mat|vec)\d(?:x\d)?)\s+\w+\s*=\s*)(?:\d+\.?\d*|\.\d+)(?:e\d+)?/g
 			const ignore = /\/\/.*|\/\*[^]*?\*\/|#.*/g
 
 			// Replace all comments and preprocessor directives with whitespace so that ASI won't match it
@@ -47,6 +48,16 @@ function activate( context ) {
 
 				//if ( count > 0 ) vscode.window.showInformationMessage( `Added ${count} parenthese${"s".repeat( count != 1 )}` )
 			}
+
+			searchString.replace( lazyinit, function () {
+
+				let startindex = arguments[arguments.length - 2]
+				let endindex = startindex + arguments[0].length
+
+				edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), arguments[1] + "(" ) )
+				edits.push( vscode.TextEdit.insert( document.positionAt( endindex ), ")" ) )
+
+			} )
 
 			// Lazy for
 			/////////////////////////////////////////////////////////////////////////////////////////////
