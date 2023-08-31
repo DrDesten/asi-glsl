@@ -24,14 +24,14 @@ Changes will **not** happen while you type.
 |Shorthand|Expanded|
 |-|-|
 |`if x ...`|`if (x) ...`  *works with shorthand if!*|  
-|`for a;b;c {...}`|`for (a;b;c) {...}`  *works with lazy for!*|
+|`for a;b;c { ... }`|`for (a;b;c) { ... }`  *works with lazy for!*|
 
 #### **Lazy for**
 |Shorthand|Expanded|
 |-|-|
-|`for (5) {...}`|`for (int i = 0; i < 5; i++) {...}`|  
-|`for (o < 5) {...}`|`for (int o = 0; o < 5; o++) {...}` |
-|`for (float o < 5) {...}`|`for (float o = 0; o < 5; o++) {...}`|
+|`for (5) { ... }`|`for (int i = 0; i < 5; i++) { ... }`|  
+|`for (o < 5) { ... }`|`for (int o = 0; o < 5; o++) { ... }` |
+|`for (float o < 5) { ... }`|`for (float o = 0; o < 5; o++) { ... }`|
 
 #### **Lazy Constructors**  
 |Shorthand|Expanded|
