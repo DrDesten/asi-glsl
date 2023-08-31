@@ -37,7 +37,7 @@
 				"asi-glsl.addArgumentParentheses": {
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Extension adds argument parentheses to `if` and `for` statements when formatting. Does not work for shorthand syntax."
+					"markdownDescription": "Extension adds argument parentheses to `if` and `for` statements when formatting."
 				},
 				"asi-glsl.lazyFor": {
 					"type": "boolean",
