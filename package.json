@@ -3,7 +3,7 @@
 	"displayName": "ASI for GLSL",
 	"description": "Adds Automatic Semicolon Insertion to GLSL",
 	"publisher": "DrDesten",
-	"version": "1.3.0",
+	"version": "1.3.1",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/DrDesten/asi-glsl.git"

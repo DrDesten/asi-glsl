@@ -1,8 +1,11 @@
 # Change Log
-  
+
+## 1.3.1
+- Fixed ASI adding semicolons after multiline macro escapes
+
 ## 1.3.0
 - Added Lazy Constructors
-  - Automatically puts in constructor in initialisation statements. Only works for numbers as the extension doesn't know about variable types.
+  - Automatically puts in constructor in initialization statements. Only works for numbers as the extension doesn't know about variable types.
   - `vecn var = 0` => `vecn var = vecn(0)`
   - `matn var = 0` => `matn var = matn(0)`
   - `matnxm var = 0` => `matnxm var = matnxm(0)`

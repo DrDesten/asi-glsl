@@ -27,11 +27,12 @@ function activate( context ) {
             const argparentheses = /(?<=(if|for) +(?! |\())[^\n\r{}]*?(?=(?<!\) *) *{)|(?<=if +)!?[\w.][\w.()]*( *[<>!=|&]{1,2} *!?[\w.][\w.()]*)*(?= +[A-z_])/g
             const lazyfor = /(?<=for +|for *\( *)([\w.]+) *?([\w.]+)? *?([<>!=]{1,2})? *?([\w.]+)?(?= *\)? *{)/g
             const lazyconstructors = /(?<=((?:u|i)?(?:mat|vec)\d(?:x\d)?)\s+\w+\s*=\s*)(?:\d+\.?\d*|\.\d+)(?:e\d+)?/g
-            const ignore = /\/\/.*|\/\*[^]*?\*\/|#([^\\\n]|\\[^])*/g
+            const ignore = /\/\/.*|\/\*[^]*?\*\/|#(\\\r?\n|.)+/g
 
             // Replace all comments and preprocessor directives with whitespace so that ASI won't match it
             /////////////////////////////////////////////////////////////////////////////////////////////
-            let searchString = document.getText().replace( ignore, substr => " ".repeat( substr.length ) )
+            const documentText = document.getText()
+            let searchString = documentText.replace( ignore, substr => " ".repeat( substr.length ) )
 
             // Add parentheses around if and for statements
             /////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,7 +137,7 @@ function activate( context ) {
 }
 
 // this method is called when your extension is deactivated
-function deactivate() { }
+function deactivate() {}
 
 module.exports = {
     activate,
