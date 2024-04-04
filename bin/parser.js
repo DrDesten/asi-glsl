@@ -3,23 +3,22 @@ import { Token } from "../lib/lexer.js"
 
 /** @param {Token[]} tokens  */
 export function Parse( tokens ) {
-    console.log( "tokens" )
     let index = 0
     let semicolons = []
     let commas = []
 
     function eof() {
-        return index >= tokens.length - 1
+        let i = index
+        while ( tokens[i].type === TokenType.Newline ) i++
+        return tokens[i].type === TokenType.EOF
     }
     function calcOffset( count ) {
         let offset = 0
         while ( !eof() && tokens[index + offset].type === TokenType.Newline ) offset++
-        while ( !eof() && count ) {
-            count -= tokens[index + offset].type !== TokenType.Newline
-            offset++
-        }
+        while ( !eof() && count ) count -= tokens[index + offset++].type !== TokenType.Newline
         return offset
     }
+
     function peek( offset = 0 ) {
         return tokens[index + calcOffset( offset )]
     }
@@ -47,7 +46,7 @@ export function Parse( tokens ) {
     }
 
     function parse() {
-        return parseStmt()
+        while ( !eof() ) parseStmt()
     }
     function parseStmt() {
         switch ( peek().type ) {
@@ -56,12 +55,11 @@ export function Parse( tokens ) {
             case TokenType.LBrace:
                 return parseBlock()
             case TokenType.Identifier:
-                if ( peek( 1 )?.type !== TokenType.Identifier )
-                    return parseExpr(), expectSemicolon()
-                if ( peek( 2 )?.type === TokenType.Identifier )
+                if ( peek( 1 )?.type === TokenType.Identifier ) {
+                    if ( peek( 2 )?.type === TokenType.LParen )
+                        return parseFunctionDecl()
                     return parseVarDecl(), expectSemicolon()
-                if ( peek( 2 )?.type === TokenType.LParen )
-                    return parseFunctionDecl()
+                }
                 return parseExpr(), expectSemicolon()
             case TokenType.VarDeclPrefix:
                 return parseVarDecl(), expectSemicolon()
@@ -76,17 +74,17 @@ export function Parse( tokens ) {
     }
 
     function parseVarDecl() {
-        while ( peek().type === TokenType.VarDeclPrefix ) advance()
+        while ( advanceIf( TokenType.VarDeclPrefix ) );
         advance( TokenType.Identifier ) // Type
-        advance( TokenType.Identifier ) // Variable name
 
-        if ( advanceIf( TokenType.LBrack ) ) {
-            advance( TokenType.Literal )
-            advance( TokenType.RBrack )
-        }
+        do {
+            advance( TokenType.Identifier ) // Variable name
+            if ( advanceIf( TokenType.LBrack ) ) {
+                advance( TokenType.Literal )
+                advance( TokenType.RBrack )
+            }
+        } while ( advanceIf( TokenType.Comma ) )
 
-        console.log( "peek()" )
-        console.log( peek() )
         if ( peek().text === "=" ) {
             advance() // Equals Sign
             parseExpr()
@@ -170,5 +168,5 @@ export function Parse( tokens ) {
     }
 
     parse()
-    return semicolons
+    return semicolons.map( index => tokens[index - 1] )
 }

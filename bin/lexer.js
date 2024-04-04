@@ -74,8 +74,8 @@ const Tokens = [
     new TokenMatcher( TokenType.Operator, /\+\+|\-\-/, t => t.props.operator = new Set( ["prefix", "postfix"] ) ),
     new TokenMatcher( TokenType.Operator, /~|!/, t => t.props.operator = new Set( ["prefix"] ) ),
     new TokenMatcher( TokenType.Operator, /\+|\-/, t => t.props.operator = new Set( ["prefix", "binary"] ) ),
-    new TokenMatcher( TokenType.Operator, /\*|\/|%|<<|>>|<=?|>=?|==|!=|&|\^|\||&&|^^|\|\|/, t => t.props.operator = new Set( ["binary"] ) ),
-    new TokenMatcher( TokenType.Operator, /(\+|\-|\*|\/|%|<<|>>|&|\^|\|)=?/, t => t.props.operator = new Set( ["binary"] ) ),
+    new TokenMatcher( TokenType.Operator, /\*|\/|%|<<|>>|<=?|>=?|==|!=|&|\^|\||&&|\^\^|\|\|/, t => t.props.operator = new Set( ["binary"] ) ),
+    new TokenMatcher( TokenType.Operator, /(\+|\-|\*|\/|%|<<|>>|&|\^|\|)?=/, t => t.props.operator = new Set( ["binary"] ) ),
 ]
 
 export const GLSLLexer = new Lexer( Tokens, TokenType.Error, TokenType.EOF )

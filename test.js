@@ -103,7 +103,10 @@ void main() {
 
 
 var text = `
-int a = 10
+uniform vec2 screenSize
+uniform vec2 screenSizeInverse
+
+int a = 10, 2
 `
 
 const tokens = GLSLLexer.lex( text )
