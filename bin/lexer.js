@@ -2,6 +2,8 @@ import { Position, Range, Token, TokenMatcher, Lexer } from "../lib/lexer.js"
 
 export const TokenType = Object.freeze( {
     Error: Symbol( "Error" ),
+    EOF: Symbol( "EOF" ),
+
     Preprocessor: Symbol( "Preprocessor" ),
     Comment: Symbol( "Comment" ),
     Whitespace: Symbol( "Whitespace" ),
@@ -73,7 +75,7 @@ const Tokens = [
     new TokenMatcher( TokenType.Operator, /~|!/, t => t.props.operator = new Set( ["prefix"] ) ),
     new TokenMatcher( TokenType.Operator, /\+|\-/, t => t.props.operator = new Set( ["prefix", "binary"] ) ),
     new TokenMatcher( TokenType.Operator, /\*|\/|%|<<|>>|<=?|>=?|==|!=|&|\^|\||&&|^^|\|\|/, t => t.props.operator = new Set( ["binary"] ) ),
-    new TokenMatcher( TokenType.Operator, /(\+|\-|\*|\/|%|<<|>>|&|\^|\|)?=/, t => t.props.operator = new Set( ["assignment"] ) ),
+    new TokenMatcher( TokenType.Operator, /(\+|\-|\*|\/|%|<<|>>|&|\^|\|)=?/, t => t.props.operator = new Set( ["binary"] ) ),
 ]
 
-export const GLSLLexer = new Lexer( Tokens, TokenType.Error )
+export const GLSLLexer = new Lexer( Tokens, TokenType.Error, TokenType.EOF )

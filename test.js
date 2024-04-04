@@ -1,4 +1,5 @@
 import { GLSLLexer } from "./bin/lexer.js"
+import { Parse } from "./bin/parser.js"
 import { visualize } from "./lib/lexervis.js"
 import util from "util"
 
@@ -101,6 +102,12 @@ void main() {
 `
 
 
-const tokens = GLSLLexer.lex( text )
+var text = `
+int a = 10
+`
 
-console.log( visualize( text, tokens ) )
+const tokens = GLSLLexer.lex( text )
+console.log( tokens )
+
+const semicolons = Parse( tokens )
+console.log( semicolons )
