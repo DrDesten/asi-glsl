@@ -24,6 +24,7 @@
 		"onLanguage:glsl"
 	],
 	"main": "./extension.js",
+	"type": "module",
 	"contributes": {
 		"commands": [],
 		"configuration": {
