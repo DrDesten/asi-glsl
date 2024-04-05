@@ -1,6 +1,115 @@
 import { GLSLLexer, TokenType } from "./lexer.js"
 import { Token } from "../lib/lexer.js"
 
+class Node {}
+
+class Stmt extends Node { constructor() { super() } }
+class Expr extends Node { constructor() { super() } }
+
+// Statements
+
+class ExpressionStmt extends Stmt {
+    constructor( expr ) {
+        super()
+        this.expr = expr
+    }
+}
+class BlockStmt extends Stmt {
+    constructor( stmts ) {
+        super()
+        this.stmts = stmts
+    }
+}
+class IfStmt extends Stmt {
+    constructor( condition, ifBlock, elseBlock ) {
+        super()
+        this.condition = condition
+        this.ifBlock = ifBlock
+        this.elseBlock = elseBlock
+    }
+}
+class SwitchStmt extends Stmt {
+    constructor( condition, cases ) {
+        super()
+        this.condition = condition
+        this.cases = cases
+    }
+}
+class ForStmt extends Stmt {
+    constructor( initExpr, condition, loopExpr, block ) {
+        super()
+        this.initExpr = initExpr
+        this.condition = condition
+        this.loopExpr = loopExpr
+        this.block = block
+    }
+}
+class WhileStmt extends Stmt {
+    constructor( condition, block ) {
+        super()
+        this.condition = condition
+        this.block = block
+    }
+}
+
+// Expressions
+
+class SequenceExpr extends Expr {
+    constructor( exprs ) {
+        super()
+        this.exprs = exprs
+    }
+}
+
+class BinaryExpr extends Expr {
+    constructor( left, right ) {
+        super()
+        this.left = left
+        this.right = right
+    }
+}
+
+class UnaryExpr extends Expr {
+    constructor( expr ) {
+        super()
+        this.expr = expr
+    }
+}
+
+class LiteralExpr extends Expr {
+    constructor( literal ) {
+        super()
+        this.literal = literal
+    }
+}
+
+class CallExpression extends Expr {
+    constructor( callee, args ) {
+        super()
+        this.callee = callee
+        this.args = args
+    }
+}
+
+class AccessExpr extends Expr {
+    constructor( target, property ) {
+        super()
+        this.target = target
+        this.property = property
+    }
+}
+
+class IndexExpr extends Expr {
+    constructor( target, expr ) {
+        super()
+        this.target = target
+        this.expr = expr
+    }
+}
+
+
+// Parser
+
 /** @param {Token[]} tokens  */
 export function Parse( tokens ) {
     let index = 0
@@ -108,63 +217,75 @@ export function Parse( tokens ) {
         }
     }
 
+    /** @returns {Expr} */
     function parseExpr() {
-        parseBinaryExpr()
-        while ( advanceIf( TokenType.Comma ) ) parseBinaryExpr()
+        const exprs = []
+        do {
+            exprs.push( parseBinaryExpr() )
+        } while ( advanceIf( TokenType.Comma ) )
+        return exprs.length === 1 ? exprs[0] : new SequenceExpr( exprs )
     }
 
     function parseBinaryExpr() {
-        parsePrefixExpr()
+        let left = parsePrefixExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "binary" ) ) {
             advance( TokenType.Operator )
-            parsePrefixExpr()
+            left = new BinaryExpr( left, parsePrefixExpr() )
         }
+        return left
     }
 
     function parsePrefixExpr() {
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "prefix" ) ) {
             advance( TokenType.Operator )
         }
-        parsePostfixExpr()
+        return parsePostfixExpr()
     }
 
     function parsePostfixExpr() {
-        parseLiteralExpr()
+        let expr = parseLiteralExpr()
         while ( !eof() ) {
             const token = peek()
             switch ( token.type ) {
                 case TokenType.Dot:
                     advance()
-                    advance( TokenType.Identifier )
+                    const property = advance( TokenType.Identifier )
+                    expr = new AccessExpr( expr, property )
                     continue
                 case TokenType.LBrack:
                     advance()
-                    parseExpr()
+                    const index = parseExpr()
                     advance( TokenType.RBrack )
+                    expr = new IndexExpr( expr, index )
                     continue
                 case TokenType.LParen:
                     advance()
-                    parseExpr()
-                    while ( advanceIf( TokenType.Comma ) ) parseExpr()
+                    const args = []
+                    if ( peek().type !== TokenType.RParen ) do {
+                        args.push( parseExpr() )
+                    } while ( advanceIf( TokenType.Comma ) )
                     advance( TokenType.RParen )
+                    expr = new CallExpression( expr, args )
                     continue
                 case TokenType.Operator:
                     if ( token.props.operator.has( "postfix" ) ) {
                         advance()
+                        expr = new UnaryExpr( expr )
                         continue
                     }
             }
             break
         }
+        return expr
     }
 
     function parseLiteralExpr() {
         if ( advanceIf( TokenType.LParen ) ) {
-            parseExpr()
+            const expr = parseExpr()
             advance( TokenType.RParen )
-            return
+            return expr
         }
-        advance( TokenType.Literal, TokenType.Identifier )
+        return new LiteralExpr( advance( TokenType.Literal, TokenType.Identifier ) )
     }
 
     parse()
