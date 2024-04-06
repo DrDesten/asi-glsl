@@ -102,7 +102,7 @@ void main() {
 `
 
 
-var text = `
+text = `
 uniform vec2 screenSize
 uniform vec2 screenSizeInverse
 
@@ -110,10 +110,16 @@ int
     x = 0,
     y = 0,
     z = 0
+
+vec4 saturate(vec4 x) { return clamp(x, 0.0, 1.0) }
 `
+
+
 
 const tokens = GLSLLexer.lex( text )
 console.log( tokens.map( t => [t.type, t.text] ) )
 
-const semicolons = Parse( tokens )
-console.log( semicolons )
+const [ast, semicolons] = Parse( tokens )
+console.log( util.inspect( ast, false, Infinity, true ) )
+console.log( util.inspect( ast, false, 4, true ) )
+console.log( semicolons.map( t => [t.text, t.range.end] ) )

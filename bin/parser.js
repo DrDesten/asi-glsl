@@ -102,6 +102,16 @@ class DoWhileStmt extends Stmt {
     }
 }
 
+class BreakStmt extends Stmt {}
+class ContinueStmt extends Stmt {}
+class ReturnStmt extends Stmt {
+    constructor( expr ) {
+        super()
+        this.expr = expr
+    }
+}
+class DiscardStmt extends Stmt {}
+
 // Expressions
 
 class SequenceExpr extends Expr {
@@ -165,6 +175,9 @@ export function Parse( tokens ) {
     let index = 0
     let semicolons = []
 
+    let ast = parse()
+    return [ast, semicolons.map( index => tokens[index - 1] )]
+
     function eof() {
         let i = index
         while ( tokens[i].type === TokenType.Newline ) i++
@@ -188,11 +201,14 @@ export function Parse( tokens ) {
     function peek( offset = 0 ) {
         return tokens[index + calcOffset( offset )]
     }
+    function peekStrict( offset = 0 ) {
+        return tokens[index + offset]
+    }
     /** @param {...Symbol} types @returns {Token} */
     function advance( ...types ) {
         const token = peek()
         if ( types.length && !types.includes( token.type ) ) {
-            throw new Error( `Expected ${types.join( ' or ' )}, got ${token.type}` )
+            throw new Error( `Expected ${types.map( s => s.toString() ).join( ' or ' )}, got ${token.type.toString()}` )
         }
         index += calcOffset( 0 )
         index++
@@ -269,7 +285,7 @@ export function Parse( tokens ) {
             let initExpr = null
             if ( peek().text === "=" ) {
                 advance() // Equals Sign
-                initExpr = parseExpr()
+                initExpr = parseExprSingle()
             }
 
             decls.push( new VarDeclSingle( type, array, ident, initExpr ) )
@@ -301,27 +317,17 @@ export function Parse( tokens ) {
 
     function parseStmt() {
         switch ( peek().type ) {
-            case TokenType.EOF: {
-                return
-            }
-            case TokenType.LBrace: {
-                return parseBlock()
-            }
-            case TokenType.If: {
-                return parseIf()
-            }
-            case TokenType.Switch: {
-                return parseSwitch()
-            }
-            case TokenType.For: {
-                return parseFor()
-            }
-            case TokenType.While: {
-                return parseWhile()
-            }
-            case TokenType.Do: {
-                return parseDoWhile()
-            }
+            case TokenType.EOF: return
+            case TokenType.LBrace: return parseBlock()
+            case TokenType.If: return parseIf()
+            case TokenType.Switch: return parseSwitch()
+            case TokenType.For: return parseFor()
+            case TokenType.While: return parseWhile()
+            case TokenType.Do: return parseDoWhile()
+            case TokenType.Break: return parseBreak()
+            case TokenType.Continue: return parseContinue()
+            case TokenType.Return: return parseReturn()
+            case TokenType.Discard: return parseDiscard()
             default: {
                 const stmt = new ExpressionStmt( parseExpr() )
                 expectSemicolon()
@@ -333,7 +339,7 @@ export function Parse( tokens ) {
     function parseBlock() {
         advance( TokenType.LBrace )
         const stmts = []
-        while ( !advanceIf( TokenType.RBrace ) ) stmts.push( parseStmt() )
+        while ( !advanceIf( TokenType.RBrace ) ) stmts.push( parseDecl() )
         return new BlockStmt( stmts )
     }
 
@@ -428,15 +434,43 @@ export function Parse( tokens ) {
         return new DoWhileStmt( condition, body )
     }
 
+    function parseBreak() {
+        advance( TokenType.Break )
+        expectSemicolon()
+        return new BreakStmt()
+    }
+    function parseContinue() {
+        advance( TokenType.Continue )
+        expectSemicolon()
+        return new ContinueStmt()
+    }
+    function parseReturn() {
+        advance( TokenType.Return )
+        let expr = null
+        if ( peekStrict().type !== TokenType.Newline ) {
+            expr = parseExpr()
+        }
+        expectSemicolon()
+        return new ReturnStmt( expr )
+    }
+    function parseDiscard() {
+        advance( TokenType.Discard )
+        expectSemicolon()
+        return new DiscardStmt()
+    }
+
     // Expressions
 
     /** @returns {Expr} */
     function parseExpr() {
         const exprs = []
         do {
-            exprs.push( parseBinaryExpr() )
+            exprs.push( parseExprSingle() )
         } while ( advanceIf( TokenType.Comma ) )
         return exprs.length === 1 ? exprs[0] : new SequenceExpr( exprs )
+    }
+    function parseExprSingle() {
+        return parseBinaryExpr()
     }
 
     function parseBinaryExpr() {
@@ -475,7 +509,7 @@ export function Parse( tokens ) {
                     advance()
                     const args = []
                     if ( peek().type !== TokenType.RParen ) do {
-                        args.push( parseExpr() )
+                        args.push( parseExprSingle() )
                     } while ( advanceIf( TokenType.Comma ) )
                     advance( TokenType.RParen )
                     expr = new CallExpression( expr, args )
@@ -500,7 +534,4 @@ export function Parse( tokens ) {
         }
         return new LiteralExpr( advance( TokenType.Literal, TokenType.Identifier ) )
     }
-
-    parse()
-    return semicolons.map( index => tokens[index - 1] )
 }

@@ -62,7 +62,7 @@ const Tokens = [
     new TokenMatcher( TokenType.Discard, /discard/ ),
 
     new TokenMatcher( TokenType.Literal, /0b[01]+|0x[0-9a-fA-F]+|\d+/ ),
-    new TokenMatcher( TokenType.Literal, /(\d+\.\d*|\d*\.\d+)([eE][+-]?\d+)/ ),
+    new TokenMatcher( TokenType.Literal, /(\d+\.\d*|\d*\.\d+)([eE][+-]?\d+)?/ ),
     new TokenMatcher( TokenType.Identifier, /[a-zA-Z_][a-zA-Z0-9_]*/ ),
 
     new TokenMatcher( TokenType.Colon, /:/ ),
