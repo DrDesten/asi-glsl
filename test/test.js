@@ -1,6 +1,6 @@
-import { GLSLLexer } from "./bin/lexer.js"
-import { Parse } from "./bin/parser.js"
-import { visualize } from "./lib/lexervis.js"
+import { GLSLLexer } from "../bin/lexer.js"
+import { Parse } from "../bin/parser.js"
+import { visualize } from "../lib/lexervis.js"
 import util from "util"
 
 const string = `
@@ -111,7 +111,7 @@ layout(location = 0) out vec4 FragOut0
 2 && 2
 `
 
-const originalSemicolons = [...text.matchAll( /;/g )].length
+const originalSemicolons = [...text.matchAll( /;/g )].map( m => m.index )
 
 const tokens = GLSLLexer.lex( text.replace( /;/g, "" ) )
 //console.log( tokens.map( t => [t.type, t.text] ) )
@@ -121,4 +121,4 @@ const [ast, semicolons] = Parse( tokens )
 //console.log( util.inspect( ast, false, 4, true ) )
 //console.log( semicolons.map( t => [t.text, t.range.end] ) )
 console.log( originalSemicolons )
-console.log( semicolons.length )
+console.log( semicolons.map( ( t, i ) => t.range.end.index + i ) )

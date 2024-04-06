@@ -48,7 +48,7 @@ const Tokens = [
     new TokenMatcher( TokenType.Whitespace, /[^\S\n]+/, t => t.props.ignore = true ),
     new TokenMatcher( TokenType.Newline, /\r?\n/, t => t.props.merge = true ),
 
-    new TokenMatcher( TokenType.VarDeclPrefix, /const|in|out|attribute|uniform|varying|invariant|precise|buffer|shared|centroid|sample|patch|flat|smooth|noperspective/ ),
+    new TokenMatcher( TokenType.VarDeclPrefix, /const|in|out|inout|attribute|uniform|varying|invariant|precise|buffer|shared|centroid|sample|patch|flat|smooth|noperspective/ ),
     new TokenMatcher( TokenType.Layout, /layout/ ),
     new TokenMatcher( TokenType.If, /if/ ),
     new TokenMatcher( TokenType.Else, /else/ ),
