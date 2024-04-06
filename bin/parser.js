@@ -3,8 +3,44 @@ import { Token } from "../lib/lexer.js"
 
 class Node {}
 
-class Stmt extends Node { constructor() { super() } }
+class Decl extends Node { constructor() { super() } }
+class Stmt extends Decl { constructor() { super() } }
 class Expr extends Node { constructor() { super() } }
+
+// Declarations
+
+class VarDecl extends Decl {
+    constructor( decls ) {
+        super()
+        this.decls = decls
+    }
+}
+class VarDeclSingle extends Node {
+    constructor( type, array, ident, initExpr ) {
+        super()
+        this.type = type
+        this.array = array
+        this.ident = ident
+        this.initExpr = initExpr
+    }
+}
+
+class FunctionDecl extends Decl {
+    constructor( returnType, ident, args, body ) {
+        super()
+        this.returnType = returnType
+        this.ident = ident
+        this.args = args
+        this.body = body
+    }
+}
+class FunctionArg extends Node {
+    constructor( type, ident ) {
+        super()
+        this.type = type
+        this.ident = ident
+    }
+}
 
 // Statements
 
@@ -128,7 +164,6 @@ class IndexExpr extends Expr {
 export function Parse( tokens ) {
     let index = 0
     let semicolons = []
-    let commas = []
 
     function eof() {
         let i = index
@@ -153,6 +188,7 @@ export function Parse( tokens ) {
     function peek( offset = 0 ) {
         return tokens[index + calcOffset( offset )]
     }
+    /** @param {...Symbol} types @returns {Token} */
     function advance( ...types ) {
         const token = peek()
         if ( types.length && !types.includes( token.type ) ) {
@@ -162,12 +198,12 @@ export function Parse( tokens ) {
         index++
         return token
     }
+    /** @param {...Symbol} types @returns {Token?} */
     function advanceIf( ...types ) {
         if ( !eof() && types.includes( peek().type ) ) {
-            advance( ...types )
-            return true
+            return advance( ...types )
         }
-        return false
+        return null
     }
 
     function expectSemicolon() {
@@ -179,11 +215,91 @@ export function Parse( tokens ) {
     }
 
     function parse() {
-        while ( !eof() ) parseStmt()
+        const program = []
+        while ( !eof() ) program.push( parseDecl() )
+        return program
     }
-    function parseStmt() {
+
+    // Declarations
+
+    function parseDecl() {
         /* console.log( calcOffset( 0 ), calcOffset( 1 ), calcOffset( 2 ) )
         console.log( peek(), peek( 1 ), peek( 2 ) ) */
+        switch ( peek().type ) {
+            case TokenType.EOF: {
+                return
+            }
+            case TokenType.Identifier: {
+                if ( peek( 1 )?.type === TokenType.Identifier ) {
+                    if ( peek( 2 )?.type === TokenType.LParen ) {
+                        return parseFunctionDecl()
+                    }
+                    const stmt = parseVarDecl()
+                    expectSemicolon()
+                    return stmt
+                }
+                return parseStmt()
+            }
+            case TokenType.VarDeclPrefix: {
+                const stmt = parseVarDecl()
+                expectSemicolon()
+                return stmt
+            }
+            default: {
+                return parseStmt()
+            }
+        }
+    }
+
+    function parseVarDecl() {
+        // Type
+        const type = []
+        while ( peek().type === TokenType.VarDeclPrefix ) type.push( advance() )
+        type.push( advance( TokenType.Identifier ) )
+
+        const decls = []
+        do {
+            const ident = advance( TokenType.Identifier ) // Variable name
+            const array = []
+            while ( advanceIf( TokenType.LBrack ) ) {
+                array.push( advance( TokenType.Literal ) )
+                advance( TokenType.RBrack )
+            }
+
+            let initExpr = null
+            if ( peek().text === "=" ) {
+                advance() // Equals Sign
+                initExpr = parseExpr()
+            }
+
+            decls.push( new VarDeclSingle( type, array, ident, initExpr ) )
+        } while ( advanceIf( TokenType.Comma ) )
+
+        return new VarDecl( decls )
+    }
+
+    function parseFunctionDecl() {
+        const returnType = advance( TokenType.Identifier ) // Return Type
+        const ident = advance( TokenType.Identifier ) // Function Name
+        advance( TokenType.LParen ) // Opening Parenthesis
+
+        const args = []
+        if ( !advanceIf( TokenType.RParen ) ) {
+            do {
+                const type = advance( TokenType.Identifier ) // Argument Type
+                const ident = advance( TokenType.Identifier ) // Argument Name
+                args.push( new FunctionArg( type, ident ) )
+            } while ( advanceIf( TokenType.Comma ) )
+            advance( TokenType.RParen ) // Closing Parenthesis
+        }
+
+        const body = parseBlock()
+        return new FunctionDecl( returnType, ident, args, body )
+    }
+
+    // Statements
+
+    function parseStmt() {
         switch ( peek().type ) {
             case TokenType.EOF: {
                 return
@@ -206,24 +322,6 @@ export function Parse( tokens ) {
             case TokenType.Do: {
                 return parseDoWhile()
             }
-            case TokenType.Identifier: {
-                if ( peek( 1 )?.type === TokenType.Identifier ) {
-                    if ( peek( 2 )?.type === TokenType.LParen ) {
-                        return parseFunctionDecl()
-                    }
-                    const stmt = parseVarDecl()
-                    expectSemicolon()
-                    return stmt
-                }
-                const stmt = new ExpressionStmt( parseExpr() )
-                expectSemicolon()
-                return stmt
-            }
-            case TokenType.VarDeclPrefix: {
-                const stmt = parseVarDecl()
-                expectSemicolon()
-                return stmt
-            }
             default: {
                 const stmt = new ExpressionStmt( parseExpr() )
                 expectSemicolon()
@@ -234,7 +332,9 @@ export function Parse( tokens ) {
 
     function parseBlock() {
         advance( TokenType.LBrace )
-        while ( !advanceIf( TokenType.RBrace ) ) parseStmt()
+        const stmts = []
+        while ( !advanceIf( TokenType.RBrace ) ) stmts.push( parseStmt() )
+        return new BlockStmt( stmts )
     }
 
     function parseIf() {
@@ -328,40 +428,7 @@ export function Parse( tokens ) {
         return new DoWhileStmt( condition, body )
     }
 
-    function parseVarDecl() {
-        while ( advanceIf( TokenType.VarDeclPrefix ) );
-        advance( TokenType.Identifier ) // Type
-
-        do {
-            advance( TokenType.Identifier ) // Variable name
-            if ( advanceIf( TokenType.LBrack ) ) {
-                advance( TokenType.Literal )
-                advance( TokenType.RBrack )
-            }
-
-            if ( peek().text === "=" ) {
-                advance() // Equals Sign
-                parseExpr()
-            }
-        } while ( advanceIf( TokenType.Comma ) )
-    }
-
-    function parseFunctionDecl() {
-        advance( TokenType.Identifier ) // Return Type
-        advance( TokenType.Identifier ) // Function Name
-        advance( TokenType.LParen ) // Opening Parenthesis
-
-        if ( !advanceIf( TokenType.RParen ) ) {
-            parseExpr()
-            while ( advanceIf( TokenType.Comma ) ) parseExpr()
-            advance( TokenType.RParen ) // Closing Parenthesis
-        }
-
-        advance( TokenType.LBrace ) // Opening Brace
-        while ( advanceIf( TokenType.Identifier ) ) {
-            parseStmt()
-        }
-    }
+    // Expressions
 
     /** @returns {Expr} */
     function parseExpr() {
