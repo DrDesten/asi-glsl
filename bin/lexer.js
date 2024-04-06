@@ -10,6 +10,7 @@ export const TokenType = Object.freeze( {
     Newline: Symbol( "Newline" ),
 
     VarDeclPrefix: Symbol( "VarDeclPrefix" ),
+    Layout: Symbol( "Layout" ),
     If: Symbol( "If" ),
     Else: Symbol( "Else" ),
     For: Symbol( "For" ),
@@ -48,6 +49,7 @@ const Tokens = [
     new TokenMatcher( TokenType.Newline, /\r?\n/, t => t.props.merge = true ),
 
     new TokenMatcher( TokenType.VarDeclPrefix, /const|in|out|attribute|uniform|varying|invariant|precise|buffer|shared|centroid|sample|patch|flat|smooth|noperspective/ ),
+    new TokenMatcher( TokenType.Layout, /layout/ ),
     new TokenMatcher( TokenType.If, /if/ ),
     new TokenMatcher( TokenType.Else, /else/ ),
     new TokenMatcher( TokenType.For, /for/ ),
@@ -80,7 +82,7 @@ const Tokens = [
     new TokenMatcher( TokenType.Operator, /\+\+|\-\-/, t => t.props.operator = new Set( ["prefix", "postfix"] ) ),
     new TokenMatcher( TokenType.Operator, /~|!/, t => t.props.operator = new Set( ["prefix"] ) ),
     new TokenMatcher( TokenType.Operator, /\+|\-/, t => t.props.operator = new Set( ["prefix", "binary"] ) ),
-    new TokenMatcher( TokenType.Operator, /\*|\/|%|<<|>>|<=?|>=?|==|!=|&|\^|\||&&|\^\^|\|\|/, t => t.props.operator = new Set( ["binary"] ) ),
+    new TokenMatcher( TokenType.Operator, /\*|\/|%|<<|>>|<=?|>=?|==|!=|&&?|\^\^?|\|\|?/, t => t.props.operator = new Set( ["binary"] ) ),
     new TokenMatcher( TokenType.Operator, /(\+|\-|\*|\/|%|<<|>>|&|\^|\|)?=/, t => t.props.operator = new Set( ["binary"] ) ),
 ]
 

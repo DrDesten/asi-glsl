@@ -204,20 +204,37 @@ export function Parse( tokens ) {
     function peekStrict( offset = 0 ) {
         return tokens[index + offset]
     }
-    /** @param {...Symbol} types @returns {Token} */
-    function advance( ...types ) {
+    /** @param {Token} token @param {...(Symbol|string)} conditions */
+    function checkConditions( token, ...conditions ) {
+        if ( conditions.length === 0 ) return true
+        const symbols = conditions.filter( c => typeof c === "symbol" )
+        const strings = conditions.filter( c => typeof c === "string" )
+        return ( !symbols.length || symbols.includes( token.type ) ) && ( !strings.length || strings.includes( token.text ) )
+    }
+    /** @param {...(Symbol|string)} conditions @returns {Token} */
+    function advance( ...conditions ) {
         const token = peek()
-        if ( types.length && !types.includes( token.type ) ) {
-            throw new Error( `Expected ${types.map( s => s.toString() ).join( ' or ' )}, got ${token.type.toString()}` )
+        if ( !checkConditions( token, ...conditions ) ) {
+            let c = [
+                conditions.filter( c => typeof c === "symbol" ).map( s => s.toString() ).join( " or " ),
+                conditions.filter( c => typeof c === "string" ).map( s => `"${s}"` ).join( " or " )
+            ]
+            if ( c[0] ) c[0] = "of type " + c[0]
+            if ( c[1] ) c[1] = "with text of " + c[1]
+            c = c.filter( c => c )
+
+            let message = `\nExpected Token ${c.join( " and " )}\nGot Token of type ${token.type.toString()} and text of "${token.text}"`
+            message += `\nAt: l:${token.position.line} c: ${token.position.column}`
+            throw new Error( message + "\n" )
         }
         index += calcOffset( 0 )
         index++
         return token
     }
-    /** @param {...Symbol} types @returns {Token?} */
-    function advanceIf( ...types ) {
-        if ( !eof() && types.includes( peek().type ) ) {
-            return advance( ...types )
+    /** @param {...(Symbol|string)} conditions @returns {Token?} */
+    function advanceIf( ...conditions ) {
+        if ( checkConditions( peek(), ...conditions ) ) {
+            return advance( ...conditions )
         }
         return null
     }
@@ -261,10 +278,25 @@ export function Parse( tokens ) {
                 expectSemicolon()
                 return stmt
             }
+            case TokenType.Layout: {
+                const stmt = parseLayout()
+                expectSemicolon()
+                return stmt
+            }
             default: {
                 return parseStmt()
             }
         }
+    }
+
+    function parseLayout() {
+        advance( TokenType.Layout )
+        advance( TokenType.LParen )
+        advance( TokenType.Identifier, "location" )
+        advance( TokenType.Operator, "=" )
+        advance( TokenType.Literal )
+        advance( TokenType.RParen )
+        return parseVarDecl()
     }
 
     function parseVarDecl() {
@@ -397,8 +429,7 @@ export function Parse( tokens ) {
         advance( TokenType.LParen )
         let initExpr = null
         if ( !advanceIf( TokenType.Semicolon ) ) {
-            initExpr = parseExpr()
-            expectSemicolon()
+            initExpr = parseDecl() // parseDecl already expects a semicolon
         }
         let condition = null
         if ( !advanceIf( TokenType.Semicolon ) ) {
@@ -501,7 +532,8 @@ export function Parse( tokens ) {
                     continue
                 case TokenType.LBrack:
                     advance()
-                    const index = parseExpr()
+                    let index = null
+                    if ( peek().type !== TokenType.RBrack ) index = parseExpr()
                     advance( TokenType.RBrack )
                     expr = new IndexExpr( expr, index )
                     continue

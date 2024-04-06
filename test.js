@@ -44,7 +44,7 @@ layout(location = 0) out vec4 FragOut0;
 void main() {
     ivec2 pixel = ivec2(coord * screenSize);
 
-    /* vec3 colors[9] = vec3[]( vec3(0),vec3(0),vec3(0),vec3(0),vec3(0),vec3(0),vec3(0),vec3(0),vec3(0) );
+    vec3 colors[9] = vec3[]( vec3(0),vec3(0),vec3(0),vec3(0),vec3(0),vec3(0),vec3(0),vec3(0),vec3(0) );
 
     if (pixel.x < int(screenSize.x) / 3 && pixel.y < int(screenSize.y) / 3) {
         colors = vec3[](
@@ -71,7 +71,7 @@ void main() {
 
     if (hits > 0) {
         color = oklab2rgb(color / hits);
-    } */
+    }
 
     vec3 colors[4] = vec3[]( vec3(0),vec3(0),vec3(0),vec3(0) );
 
@@ -102,24 +102,23 @@ void main() {
 `
 
 
-text = `
-uniform vec2 screenSize
-uniform vec2 screenSizeInverse
 
-int 
-    x = 0,
-    y = 0,
-    z = 0
-
+text == `
+uniform vec2 screenSize, screenSizeInverse
+int x = 0, y = 0, z = 0
 vec4 saturate(vec4 x) { return clamp(x, 0.0, 1.0) }
+layout(location = 0) out vec4 FragOut0
+2 && 2
 `
 
+const originalSemicolons = [...text.matchAll( /;/g )].length
 
-
-const tokens = GLSLLexer.lex( text )
-console.log( tokens.map( t => [t.type, t.text] ) )
+const tokens = GLSLLexer.lex( text.replace( /;/g, "" ) )
+//console.log( tokens.map( t => [t.type, t.text] ) )
 
 const [ast, semicolons] = Parse( tokens )
-console.log( util.inspect( ast, false, Infinity, true ) )
-console.log( util.inspect( ast, false, 4, true ) )
-console.log( semicolons.map( t => [t.text, t.range.end] ) )
+//console.log( util.inspect( ast, false, Infinity, true ) )
+//console.log( util.inspect( ast, false, 4, true ) )
+//console.log( semicolons.map( t => [t.text, t.range.end] ) )
+console.log( originalSemicolons )
+console.log( semicolons.length )
