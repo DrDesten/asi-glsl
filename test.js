@@ -106,11 +106,14 @@ var text = `
 uniform vec2 screenSize
 uniform vec2 screenSizeInverse
 
-int a = 10, 2
+int 
+    x = 0,
+    y = 0,
+    z = 0
 `
 
 const tokens = GLSLLexer.lex( text )
-console.log( tokens )
+console.log( tokens.map( t => [t.type, t.text] ) )
 
 const semicolons = Parse( tokens )
 console.log( semicolons )

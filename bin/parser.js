@@ -35,6 +35,13 @@ class SwitchStmt extends Stmt {
         this.cases = cases
     }
 }
+class SwitchCase extends Node {
+    constructor( condition, stmts ) {
+        super()
+        this.condition = condition
+        this.stmts = stmts
+    }
+}
 class ForStmt extends Stmt {
     constructor( initExpr, condition, loopExpr, block ) {
         super()
@@ -45,6 +52,13 @@ class ForStmt extends Stmt {
     }
 }
 class WhileStmt extends Stmt {
+    constructor( condition, block ) {
+        super()
+        this.condition = condition
+        this.block = block
+    }
+}
+class DoWhileStmt extends Stmt {
     constructor( condition, block ) {
         super()
         this.condition = condition
@@ -123,8 +137,16 @@ export function Parse( tokens ) {
     }
     function calcOffset( count ) {
         let offset = 0
-        while ( !eof() && tokens[index + offset].type === TokenType.Newline ) offset++
-        while ( !eof() && count ) count -= tokens[index + offset++].type !== TokenType.Newline
+        while ( !eof() ) {
+            // Skip all newlines
+            if ( tokens[index + offset].type === TokenType.Newline ) {
+                offset++
+                continue
+            }
+            // Next token isn't a newline, check `count`
+            if ( count ) count--, offset++
+            else break
+        }
         return offset
     }
 
@@ -151,6 +173,8 @@ export function Parse( tokens ) {
     function expectSemicolon() {
         if ( !advanceIf( TokenType.Semicolon ) ) {
             semicolons.push( index )
+        } else {
+            while ( advanceIf( TokenType.Semicolon ) ) {}
         }
     }
 
@@ -158,28 +182,150 @@ export function Parse( tokens ) {
         while ( !eof() ) parseStmt()
     }
     function parseStmt() {
+        /* console.log( calcOffset( 0 ), calcOffset( 1 ), calcOffset( 2 ) )
+        console.log( peek(), peek( 1 ), peek( 2 ) ) */
         switch ( peek().type ) {
-            case TokenType.EOF:
+            case TokenType.EOF: {
                 return
-            case TokenType.LBrace:
+            }
+            case TokenType.LBrace: {
                 return parseBlock()
-            case TokenType.Identifier:
+            }
+            case TokenType.If: {
+                return parseIf()
+            }
+            case TokenType.Switch: {
+                return parseSwitch()
+            }
+            case TokenType.For: {
+                return parseFor()
+            }
+            case TokenType.While: {
+                return parseWhile()
+            }
+            case TokenType.Do: {
+                return parseDoWhile()
+            }
+            case TokenType.Identifier: {
                 if ( peek( 1 )?.type === TokenType.Identifier ) {
-                    if ( peek( 2 )?.type === TokenType.LParen )
+                    if ( peek( 2 )?.type === TokenType.LParen ) {
                         return parseFunctionDecl()
-                    return parseVarDecl(), expectSemicolon()
+                    }
+                    const stmt = parseVarDecl()
+                    expectSemicolon()
+                    return stmt
                 }
-                return parseExpr(), expectSemicolon()
-            case TokenType.VarDeclPrefix:
-                return parseVarDecl(), expectSemicolon()
-            default:
-                return parseExpr(), expectSemicolon()
+                const stmt = new ExpressionStmt( parseExpr() )
+                expectSemicolon()
+                return stmt
+            }
+            case TokenType.VarDeclPrefix: {
+                const stmt = parseVarDecl()
+                expectSemicolon()
+                return stmt
+            }
+            default: {
+                const stmt = new ExpressionStmt( parseExpr() )
+                expectSemicolon()
+                return stmt
+            }
         }
     }
 
     function parseBlock() {
         advance( TokenType.LBrace )
         while ( !advanceIf( TokenType.RBrace ) ) parseStmt()
+    }
+
+    function parseIf() {
+        advance( TokenType.If )
+        advance( TokenType.LParen )
+        const condition = parseExpr()
+        advance( TokenType.RParen )
+
+        const ifBlock = parseStmt()
+        let elseBlock = null
+        if ( advanceIf( TokenType.Else ) ) {
+            elseBlock = parseStmt()
+        }
+
+        return new IfStmt( condition, ifBlock, elseBlock )
+    }
+
+    function parseSwitch() {
+        advance( TokenType.Switch )
+        advance( TokenType.LParen )
+        const switchCondition = parseExpr()
+        advance( TokenType.RParen )
+
+        advance( TokenType.LBrace )
+        const cases = []
+        while ( !advanceIf( TokenType.RBrace ) ) {
+            if ( advanceIf( TokenType.Case ) ) {
+                const caseCondition = parseExpr()
+                advance( TokenType.Colon )
+
+                const body = []
+                while ( !advanceIf( TokenType.Case ) && !advanceIf( TokenType.Default ) && !advanceIf( TokenType.RBrace ) ) {
+                    body.push( parseStmt() )
+                }
+
+                cases.push( new SwitchCase( caseCondition, body ) )
+            }
+            if ( advanceIf( TokenType.Default ) ) {
+                advance( TokenType.Colon )
+
+                const body = []
+                while ( !advanceIf( TokenType.RBrace ) ) {
+                    body.push( parseStmt() )
+                }
+
+                cases.push( new SwitchCase( null, body ) )
+            }
+        }
+        return new SwitchStmt( switchCondition, cases )
+    }
+
+    function parseFor() {
+        advance( TokenType.For )
+        advance( TokenType.LParen )
+        let initExpr = null
+        if ( !advanceIf( TokenType.Semicolon ) ) {
+            initExpr = parseExpr()
+            expectSemicolon()
+        }
+        let condition = null
+        if ( !advanceIf( TokenType.Semicolon ) ) {
+            condition = parseExpr()
+            expectSemicolon()
+        }
+        let loopExpr = null
+        if ( !advanceIf( TokenType.RParen ) ) {
+            loopExpr = parseExpr()
+            advance( TokenType.RParen )
+        }
+        const body = parseStmt()
+        return new ForStmt( initExpr, condition, loopExpr, body )
+    }
+
+    function parseWhile() {
+        advance( TokenType.While )
+        advance( TokenType.LParen )
+        const condition = parseExpr()
+        advance( TokenType.RParen )
+        const body = parseStmt()
+        return new WhileStmt( condition, body )
+    }
+
+    function parseDoWhile() {
+        advance( TokenType.Do )
+        const body = parseStmt()
+        advance( TokenType.While )
+        advance( TokenType.LParen )
+        const condition = parseExpr()
+        advance( TokenType.RParen )
+        expectSemicolon()
+        return new DoWhileStmt( condition, body )
     }
 
     function parseVarDecl() {
@@ -192,12 +338,12 @@ export function Parse( tokens ) {
                 advance( TokenType.Literal )
                 advance( TokenType.RBrack )
             }
-        } while ( advanceIf( TokenType.Comma ) )
 
-        if ( peek().text === "=" ) {
-            advance() // Equals Sign
-            parseExpr()
-        }
+            if ( peek().text === "=" ) {
+                advance() // Equals Sign
+                parseExpr()
+            }
+        } while ( advanceIf( TokenType.Comma ) )
     }
 
     function parseFunctionDecl() {
