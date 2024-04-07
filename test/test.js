@@ -103,7 +103,9 @@ void main() {
 
 
 
-text == `
+text = `
+#define VEC2_ROT(angle, length) \\
+    vec2(cos(angle), sin(angle))
 uniform vec2 screenSize, screenSizeInverse
 int x = 0, y = 0, z = 0
 vec4 saturate(vec4 x) { return clamp(x, 0.0, 1.0) }
@@ -114,7 +116,7 @@ layout(location = 0) out vec4 FragOut0
 const originalSemicolons = [...text.matchAll( /;/g )].map( m => m.index )
 
 const tokens = GLSLLexer.lex( text.replace( /;/g, "" ) )
-//console.log( tokens.map( t => [t.type, t.text] ) )
+console.log( tokens.map( t => [t.type, t.text] ) )
 
 const [ast, semicolons] = Parse( tokens )
 //console.log( util.inspect( ast, false, Infinity, true ) )
