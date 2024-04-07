@@ -23,13 +23,18 @@
 	"activationEvents": [
 		"onLanguage:glsl"
 	],
-	"main": "./extension.js",
+	"main": "./extension.cjs",
 	"type": "module",
 	"contributes": {
 		"commands": [],
 		"configuration": {
 			"title": "ASI for GLSL",
 			"properties": {
+				"asi-glsl.useLegacyRegex": {
+					"type": "boolean",
+					"default": false,
+					"description": "Extension uses regex to find missing semicolons"
+				},
 				"asi-glsl.addSemicolons": {
 					"type": "boolean",
 					"default": true,

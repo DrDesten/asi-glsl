@@ -1,6 +1,9 @@
+
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import vscode from 'vscode'
+/* const { GLSLLexer } = await import( './bin/lexer.js' )
+const { Parse } = await import( './bin/parser.js' ) */
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -12,10 +15,11 @@ function activate( context ) {
 
     console.log( '"asi-glsl" is online' )
 
-    let formatter = vscode.languages.registerDocumentFormattingEditProvider( "glsl", {
+    const formatter = vscode.languages.registerDocumentFormattingEditProvider( "glsl", {
         provideDocumentFormattingEdits( document ) {
 
             let edits = []
+            const useLegacyRegex = vscode.workspace.getConfiguration( "asi-glsl" ).get( "useLegacyRegex" )
             const addSemicolons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addSemicolons" )
             const addArgParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addArgumentParentheses" )
             const lazyFor = vscode.workspace.getConfiguration( "asi-glsl" ).get( "lazyFor" )
@@ -99,35 +103,52 @@ function activate( context ) {
                 //if ( count > 0 ) vscode.window.showInformationMessage( `${count}x Lazy-For` )
             }
 
-            // Replace Content of Parentheses and Brackets ( '()' and '[]' ) with whitspace so that ASI won't match it
-            /////////////////////////////////////////////////////////////////////////////////////////////
-            for ( let i = 0, priority = 0; i < searchString.length; i++ ) {
-                let char = searchString.slice( i, i + 1 )
-                if ( char == ")" || char == "]" ) priority--
-                if ( priority > 0 ) searchString = searchString.slice( 0, i ) + " " + searchString.slice( i + 1 )
-                if ( char == "(" || char == "[" ) priority++
-            }
+            if ( useLegacyRegex ) {
 
-            // Insert Semicolons at the correct locations
-            /*////////////////////////////////////////////////////////////////////////////////////////////
-            Here I hijack the str.replace function:
-            The function I pass in doesn't actually change the string, but modifies the original string. 
-            arguments[arguments.length - 2] corresponds to the index, which matches because I replaced all unparsed code with whitespace and didn't delete it.
-            Since all insertions happen at once, I do not need to keep track of the size increase of the string.
-            The semicolon has to be inserted at the match. I use lookahead and lookbehind, so all matches are null.
-            The edits array hold all TextEdit objects that will be returned by the function
-            */
-            if ( addSemicolons ) {
-                let count = 0
-                searchString.replace( asi, function () {
-                    let index = arguments[arguments.length - 2]
-                    //console.log( index )
-                    edits.push( vscode.TextEdit.insert( document.positionAt( index ), ";" ) )
-                    count++
-                } )
+                // Replace Content of Parentheses and Brackets ( '()' and '[]' ) with whitspace so that ASI won't match it
+                /////////////////////////////////////////////////////////////////////////////////////////////
+                for ( let i = 0, priority = 0; i < searchString.length; i++ ) {
+                    let char = searchString.slice( i, i + 1 )
+                    if ( char == ")" || char == "]" ) priority--
+                    if ( priority > 0 ) searchString = searchString.slice( 0, i ) + " " + searchString.slice( i + 1 )
+                    if ( char == "(" || char == "[" ) priority++
+                }
 
-                if ( count > 0 ) vscode.window.showInformationMessage( `Added ${count} Semicolon${"s".repeat( count != 1 )}` )
-            }
+                // Insert Semicolons at the correct locations
+                /*////////////////////////////////////////////////////////////////////////////////////////////
+                Here I hijack the str.replace function:
+                The function I pass in doesn't actually change the string, but modifies the original string. 
+                arguments[arguments.length - 2] corresponds to the index, which matches because I replaced all unparsed code with whitespace and didn't delete it.
+                Since all insertions happen at once, I do not need to keep track of the size increase of the string.
+                The semicolon has to be inserted at the match. I use lookahead and lookbehind, so all matches are null.
+                The edits array hold all TextEdit objects that will be returned by the function
+                */
+                if ( addSemicolons ) {
+                    let count = 0
+                    searchString.replace( asi, function () {
+                        let index = arguments[arguments.length - 2]
+                        //console.log( index )
+                        edits.push( vscode.TextEdit.insert( document.positionAt( index ), ";" ) )
+                        count++
+                    } )
+
+                    if ( count > 0 ) vscode.window.showInformationMessage( `Added ${count} Semicolon${"s".repeat( count != 1 )}` )
+                }
+
+            } /* else {
+
+                if ( addSemicolons ) {
+                    const tokens = GLSLLexer.lex( searchString )
+                    const [, semicolons] = Parse( tokens )
+                    for ( const token of semicolons ) {
+                        const index = token.range.end.index
+                        edits.push( vscode.TextEdit.insert( document.positionAt( index ), ";" ) )
+                    }
+
+                    if ( semicolons.length ) vscode.window.showInformationMessage( `Added ${semicolons.length} Semicolon${"s".repeat( semicolons.length != 1 )}` )
+                }
+
+            } */
 
             return edits
         }
