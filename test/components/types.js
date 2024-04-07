@@ -31,6 +31,21 @@ export const MatrixTypes = ["mat2", "mat3", "mat4"]
     .flatMap( t => ["", "d"].map( p => p + t ) )
     .flatMap( t => ["", "x2", "x3", "x4"].map( suffix => t + suffix ) )
 
+export const NumericTypes = {
+    Scalar: ScalarTypes,
+    Vector: VectorTypes,
+    Matrix: MatrixTypes,
+    all() { return recursiveUnwrap( this ) }
+}
+
+export const ValueTypes = {
+    Bool: [BoolType],
+    Scalar: ScalarTypes,
+    Vector: VectorTypes,
+    Matrix: MatrixTypes,
+    all() { return recursiveUnwrap( this ) }
+}
+
 export const TransparentTypes = {
     Void: [VoidType],
     Bool: [BoolType],
