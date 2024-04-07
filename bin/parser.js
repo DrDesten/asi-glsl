@@ -137,6 +137,15 @@ class SequenceExpr extends Expr {
     }
 }
 
+class ConditionalExpr extends Expr {
+    constructor( condition, trueExpr, falseExpr ) {
+        super()
+        this.condition = condition
+        this.trueExpr = trueExpr
+        this.falseExpr = falseExpr
+    }
+}
+
 class BinaryExpr extends Expr {
     constructor( left, right ) {
         super()
@@ -302,23 +311,62 @@ export function Parse( tokens ) {
         }
     }
 
+    function parseQualifiers() {
+        const seen = new Set
+        const qualifiers = []
+        while ( peek().type === TokenType.Qualifier && !seen.has( peek().props.qualifier ) ) {
+            const qualifier = advance()
+            seen.add( qualifier.props.qualifier )
+            qualifiers.push( qualifier )
+        }
+        return qualifiers
+    }
+
+    function parseType() {
+        const name = advance( TokenType.Identifier )
+        const array = []
+        while ( advanceIf( TokenType.LBrack ) ) {
+            if ( advanceIf( TokenType.RBrack ) ) {
+                array.push( null )
+            } else {
+                array.push( parseExpr() )
+                advance( TokenType.RBrack )
+            }
+        }
+        return { name, array }
+    }
+
+    function parseDeclIdentifier() {
+        const name = advance( TokenType.Identifier )
+        const array = []
+        while ( advanceIf( TokenType.LBrack ) ) {
+            if ( advanceIf( TokenType.RBrack ) ) {
+                array.push( null )
+            } else {
+                array.push( parseExpr() )
+                advance( TokenType.RBrack )
+            }
+        }
+        return { name, array }
+    }
+
     function parseStruct() {
         advance( TokenType.Struct )
         const name = advanceIf( TokenType.Identifier )
         advance( TokenType.LBrace )
         const members = []
         while ( !advanceIf( TokenType.RBrace ) ) {
-            const type = advance( TokenType.Identifier )
-            const declarators = [advance( TokenType.Identifier )]
+            const type = parseType().name
+            const declarators = [parseDeclIdentifier().name]
             while ( advanceIf( TokenType.Comma ) )
-                declarators.push( advance( TokenType.Identifier ) )
+                declarators.push( parseDeclIdentifier().name )
             members.push( new StructMember( type, declarators ) )
             expectSemicolon()
         }
         const declarators = []
         if ( peekStrict().type === TokenType.Identifier ) {
             do {
-                declarators.push( advance( TokenType.Identifier ) )
+                declarators.push( parseDeclIdentifier() )
             } while ( advanceIf( TokenType.Comma ) )
         }
         expectSemicolon()
@@ -327,25 +375,20 @@ export function Parse( tokens ) {
 
     function parseVarDecl() {
         // Type
-        while ( advanceIf( TokenType.Qualifier ) ) {}
-        const type = advance( TokenType.Identifier )
+        parseQualifiers()
+        const { name: type, array: globalArray } = parseType()
 
         const decls = []
         do {
-            const ident = advance( TokenType.Identifier ) // Variable name
-            const array = []
-            while ( advanceIf( TokenType.LBrack ) ) {
-                array.push( advance( TokenType.Literal ) )
-                advance( TokenType.RBrack )
-            }
+            const { name, array } = parseDeclIdentifier()
 
             let initExpr = null
             if ( peek().text === "=" ) {
                 advance() // Equals Sign
-                initExpr = parseExprSingle()
+                initExpr = parseSingleExpr()
             }
 
-            decls.push( new VarDeclSingle( type, array, ident, initExpr ) )
+            decls.push( new VarDeclSingle( type, globalArray.concat( array ), name, initExpr ) )
         } while ( advanceIf( TokenType.Comma ) )
 
         expectSemicolon()
@@ -358,13 +401,13 @@ export function Parse( tokens ) {
         if ( peek().type !== TokenType.RParen ) {
             do {
                 advance( TokenType.Identifier )
-                advance( "=" )
-                parseExprSingle()
+                if ( advanceIf( "=" ) )
+                    parseSingleExpr()
             } while ( advanceIf( TokenType.Comma ) )
         }
         advance( TokenType.RParen )
 
-        while ( advanceIf( TokenType.Qualifier ) ) {}
+        parseQualifiers()
         if ( advanceIf( TokenType.Identifier ) /* type */ ) {
             advance( TokenType.Identifier ) // identifier
         }
@@ -380,9 +423,9 @@ export function Parse( tokens ) {
         const args = []
         if ( !advanceIf( TokenType.RParen ) ) {
             do {
-                while ( advanceIf( TokenType.Qualifier ) ) {}
-                const type = advance( TokenType.Identifier ) // Argument Type
-                const ident = advance( TokenType.Identifier ) // Argument Name
+                parseQualifiers()
+                const { name: type } = parseType() // Argument Type
+                const { name: ident } = parseDeclIdentifier() // Argument Name
                 args.push( new FunctionArg( type, ident ) )
             } while ( advanceIf( TokenType.Comma ) )
             advance( TokenType.RParen ) // Closing Parenthesis
@@ -418,7 +461,8 @@ export function Parse( tokens ) {
     function parseBlock() {
         advance( TokenType.LBrace )
         const stmts = []
-        while ( !advanceIf( TokenType.RBrace ) ) stmts.push( parseDecl() )
+        while ( !advanceIf( TokenType.RBrace ) )
+            stmts.push( parseDecl() )
         return new BlockStmt( stmts )
     }
 
@@ -451,22 +495,23 @@ export function Parse( tokens ) {
                 advance( TokenType.Colon )
 
                 const body = []
-                while ( !advanceIf( TokenType.Case ) && !advanceIf( TokenType.Default ) && !advanceIf( TokenType.RBrace ) ) {
+                while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.RBrace ) {
                     body.push( parseStmt() )
                 }
 
                 cases.push( new SwitchCase( caseCondition, body ) )
+                continue
             }
-            if ( advanceIf( TokenType.Default ) ) {
-                advance( TokenType.Colon )
 
-                const body = []
-                while ( !advanceIf( TokenType.RBrace ) ) {
-                    body.push( parseStmt() )
-                }
+            advance( TokenType.Default )
+            advance( TokenType.Colon )
 
-                cases.push( new SwitchCase( null, body ) )
+            const body = []
+            while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.RBrace ) {
+                body.push( parseStmt() )
             }
+
+            cases.push( new SwitchCase( null, body ) )
         }
         return new SwitchStmt( switchCondition, cases )
     }
@@ -543,12 +588,23 @@ export function Parse( tokens ) {
     function parseExpr() {
         const exprs = []
         do {
-            exprs.push( parseExprSingle() )
+            exprs.push( parseSingleExpr() )
         } while ( advanceIf( TokenType.Comma ) )
         return exprs.length === 1 ? exprs[0] : new SequenceExpr( exprs )
     }
-    function parseExprSingle() {
-        return parseBinaryExpr()
+
+    function parseSingleExpr() {
+        return parseConditionalExpr()
+    }
+
+    function parseConditionalExpr() {
+        const condition = parseBinaryExpr()
+        if ( advanceIf( TokenType.Operator, "?" ) ) {
+            const trueExpr = parseExpr()
+            advance( TokenType.Colon )
+            return new ConditionalExpr( condition, trueExpr, parseSingleExpr() )
+        }
+        return condition
     }
 
     function parseBinaryExpr() {
@@ -589,7 +645,7 @@ export function Parse( tokens ) {
                     advance()
                     const args = []
                     if ( peek().type !== TokenType.RParen ) do {
-                        args.push( parseExprSingle() )
+                        args.push( parseSingleExpr() )
                     } while ( advanceIf( TokenType.Comma ) )
                     advance( TokenType.RParen )
                     expr = new CallExpression( expr, args )
@@ -598,6 +654,11 @@ export function Parse( tokens ) {
                     if ( token.props.operator.has( "postfix" ) ) {
                         advance()
                         expr = new UnaryExpr( expr )
+                        continue
+                    }
+                    if ( token.props.operator.has( "assignment" ) ) {
+                        advance()
+                        expr = new BinaryExpr( expr, parseSingleExpr() )
                         continue
                     }
             }

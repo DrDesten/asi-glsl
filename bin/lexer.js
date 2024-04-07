@@ -46,20 +46,21 @@ export const TokenType = Object.freeze( {
 } )
 
 const Tokens = [
-    new TokenMatcher( TokenType.Preprocessor, /#.*(\r?\n)?/, t => t.props.ignore = true ),
-    new TokenMatcher( TokenType.Comment, /\/\/.*(\r?\n)?|\/\*[^]*?\*\//, t => t.props.ignore = true ),
-    new TokenMatcher( TokenType.Whitespace, /[^\S\n]+/, t => t.props.ignore = true ),
-    new TokenMatcher( TokenType.Newline, /\r?\n/, t => t.props.merge = true ),
+    new TokenMatcher( TokenType.Preprocessor, /#.*(\r?\n)?/, { ignore: true } ),
+    new TokenMatcher( TokenType.Comment, /\/\/.*(\r?\n)?|\/\*[^]*?\*\//, { ignore: true } ),
+    new TokenMatcher( TokenType.Whitespace, /[^\S\n]+/, { ignore: true } ),
+    new TokenMatcher( TokenType.Newline, /\r?\n/, { merge: true } ),
 
     new TokenMatcher( TokenType.Precision, /precision/ ),
     new TokenMatcher( TokenType.Struct, /struct/ ),
     new TokenMatcher( TokenType.Layout, /layout/ ),
-    new TokenMatcher( TokenType.Qualifier, /const|in|out|inout|varying|attribute|uniform|buffer|shared|centroid|sample|patch/, t => t.props.qualifier = "storage" ),
-    new TokenMatcher( TokenType.Qualifier, /smooth|flat|noperspective/, t => t.props.qualifier = "interpolation" ),
-    new TokenMatcher( TokenType.Qualifier, /highp|mediump|lowp/, t => t.props.qualifier = "precision" ),
-    new TokenMatcher( TokenType.Qualifier, /invariant/, t => t.props.qualifier = "variance" ),
-    new TokenMatcher( TokenType.Qualifier, /precise/, t => t.props.qualifier = "precise" ),
-    new TokenMatcher( TokenType.Qualifier, /coherent|volatile|restrict|readonly|writeonly/, t => t.props.qualifier = "memory" ),
+    new TokenMatcher( TokenType.Qualifier, /const|in|out|varying|attribute|uniform|buffer|shared/, { qualifier: "storage" } ),
+    new TokenMatcher( TokenType.Qualifier, /centroid|sample|patch/, { qualifier: "aux storage" } ),
+    new TokenMatcher( TokenType.Qualifier, /smooth|flat|noperspective/, { qualifier: "interpolation" } ),
+    new TokenMatcher( TokenType.Qualifier, /highp|mediump|lowp/, { qualifier: "precision" } ),
+    new TokenMatcher( TokenType.Qualifier, /invariant/, { qualifier: "variance" } ),
+    new TokenMatcher( TokenType.Qualifier, /precise/, { qualifier: "precise" } ),
+    new TokenMatcher( TokenType.Qualifier, /coherent|volatile|restrict|readonly|writeonly/, { qualifier: "memory" } ),
 
     new TokenMatcher( TokenType.If, /if/ ),
     new TokenMatcher( TokenType.Else, /else/ ),
@@ -74,11 +75,11 @@ const Tokens = [
     new TokenMatcher( TokenType.Return, /return/ ),
     new TokenMatcher( TokenType.Discard, /discard/ ),
 
-    new TokenMatcher( TokenType.Literal, /true|false/, t => t.props.type = "bool" ),
-    new TokenMatcher( TokenType.Literal, /0[0-7]+|\d+|0[xX][0-9a-fA-F]+/, t => t.props.type = "int" ),
-    new TokenMatcher( TokenType.Literal, /(0[0-7]+|\d+|0[xX][0-9a-fA-F]+)[uU]/, t => t.props.type = "uint" ),
-    new TokenMatcher( TokenType.Literal, /(\d+\.\d+|\d+\.|\.\d+)([eE][+-]?\d+)?[fF]?|\d+[eE][+-]?\d+[fF]?/, t => t.props.type = "float" ),
-    new TokenMatcher( TokenType.Literal, /(\d+\.\d+|\d+\.|\.\d+)([eE][+-]?\d+)?[fF]?|\d+[eE][+-]?\d+(lf|LF)?/, t => t.props.type = "double" ),
+    new TokenMatcher( TokenType.Literal, /true|false/, { type: "bool" } ),
+    new TokenMatcher( TokenType.Literal, /0[0-7]+|\d+|0[xX][0-9a-fA-F]+/, { type: "int" } ),
+    new TokenMatcher( TokenType.Literal, /(0[0-7]+|\d+|0[xX][0-9a-fA-F]+)[uU]/, { type: "uint" } ),
+    new TokenMatcher( TokenType.Literal, /(\d+\.\d+|\d+\.|\.\d+)([eE][+-]?\d+)?[fF]?|\d+[eE][+-]?\d+[fF]?/, { type: "float" } ),
+    new TokenMatcher( TokenType.Literal, /(\d+\.\d+|\d+\.|\.\d+)([eE][+-]?\d+)?[fF]?|\d+[eE][+-]?\d+(lf|LF)?/, { type: "double" } ),
     new TokenMatcher( TokenType.Identifier, /[a-zA-Z_][a-zA-Z0-9_]*/ ),
 
     new TokenMatcher( TokenType.Colon, /:/ ),
@@ -93,11 +94,12 @@ const Tokens = [
     new TokenMatcher( TokenType.LBrack, /\[/ ),
     new TokenMatcher( TokenType.RBrack, /\]/ ),
 
-    new TokenMatcher( TokenType.Operator, /\+\+|\-\-/, t => t.props.operator = new Set( ["prefix", "postfix"] ) ),
-    new TokenMatcher( TokenType.Operator, /~|!/, t => t.props.operator = new Set( ["prefix"] ) ),
-    new TokenMatcher( TokenType.Operator, /\+|\-/, t => t.props.operator = new Set( ["prefix", "binary"] ) ),
-    new TokenMatcher( TokenType.Operator, /\*|\/|%|<<|>>|<=?|>=?|==|!=|&&?|\^\^?|\|\|?/, t => t.props.operator = new Set( ["binary"] ) ),
-    new TokenMatcher( TokenType.Operator, /(\+|\-|\*|\/|%|<<|>>|&|\^|\|)?=/, t => t.props.operator = new Set( ["binary"] ) ),
+    new TokenMatcher( TokenType.Operator, /\+\+|\-\-/, { operator: new Set( ["prefix", "postfix"] ) } ),
+    new TokenMatcher( TokenType.Operator, /~|!/, { operator: new Set( ["prefix"] ) } ),
+    new TokenMatcher( TokenType.Operator, /\+|\-/, { operator: new Set( ["prefix", "binary"] ) } ),
+    new TokenMatcher( TokenType.Operator, /\*|\/|%|<<|>>|<=?|>=?|==|!=|&&?|\^\^?|\|\|?/, { operator: new Set( ["binary"] ) } ),
+    new TokenMatcher( TokenType.Operator, /\?/, { operator: new Set( ["ternary"] ) } ),
+    new TokenMatcher( TokenType.Operator, /(\+|\-|\*|\/|%|<<|>>|&|\^|\|)?=/, { operator: new Set( ["assignment"] ) } ),
 ]
 
 export const GLSLLexer = new Lexer( Tokens, TokenType.Error, TokenType.EOF )
