@@ -9,6 +9,22 @@ class Expr extends Node { constructor() { super() } }
 
 // Declarations
 
+class StructDecl extends Decl {
+    constructor( name, members, declarators ) {
+        super()
+        this.name = name
+        this.members = members
+        this.declarators = declarators
+    }
+}
+class StructMember extends Node {
+    constructor( type, declarators ) {
+        super()
+        this.type = type
+        this.declarators = declarators
+    }
+}
+
 class VarDecl extends Decl {
     constructor( decls ) {
         super()
@@ -262,16 +278,8 @@ export function Parse( tokens ) {
             case TokenType.EOF: {
                 return
             }
-            case TokenType.Identifier: {
-                if ( peek( 1 )?.type === TokenType.Identifier ) {
-                    if ( peek( 2 )?.type === TokenType.LParen ) {
-                        return parseFunctionDecl()
-                    }
-                    const stmt = parseVarDecl()
-                    expectSemicolon()
-                    return stmt
-                }
-                return parseStmt()
+            case TokenType.Struct: {
+                return parseStruct()
             }
             case TokenType.VarDeclPrefix: {
                 const stmt = parseVarDecl()
@@ -283,20 +291,44 @@ export function Parse( tokens ) {
                 expectSemicolon()
                 return stmt
             }
+            case TokenType.Identifier: {
+                if ( peek( 1 )?.type === TokenType.Identifier ) {
+                    if ( peek( 2 )?.type === TokenType.LParen ) {
+                        return parseFunctionDecl()
+                    }
+                    const stmt = parseVarDecl()
+                    expectSemicolon()
+                    return stmt
+                }
+                return parseStmt()
+            }
             default: {
                 return parseStmt()
             }
         }
     }
 
-    function parseLayout() {
-        advance( TokenType.Layout )
-        advance( TokenType.LParen )
-        advance( TokenType.Identifier, "location" )
-        advance( TokenType.Operator, "=" )
-        advance( TokenType.Literal )
-        advance( TokenType.RParen )
-        return parseVarDecl()
+    function parseStruct() {
+        advance( TokenType.Struct )
+        const name = advanceIf( TokenType.Identifier )
+        advance( TokenType.LBrace )
+        const members = []
+        while ( !advanceIf( TokenType.RBrace ) ) {
+            const type = advance( TokenType.Identifier )
+            const declarators = [advance( TokenType.Identifier )]
+            while ( advanceIf( TokenType.Comma ) )
+                declarators.push( advance( TokenType.Identifier ) )
+            members.push( new StructMember( type, declarators ) )
+            expectSemicolon()
+        }
+        const declarators = []
+        if ( peekStrict().type === TokenType.Identifier ) {
+            do {
+                declarators.push( advance( TokenType.Identifier ) )
+            } while ( advanceIf( TokenType.Comma ) )
+        }
+        expectSemicolon()
+        return new StructDecl( name, members, declarators )
     }
 
     function parseVarDecl() {
@@ -324,6 +356,16 @@ export function Parse( tokens ) {
         } while ( advanceIf( TokenType.Comma ) )
 
         return new VarDecl( decls )
+    }
+
+    function parseLayout() {
+        advance( TokenType.Layout )
+        advance( TokenType.LParen )
+        advance( TokenType.Identifier, "location" )
+        advance( TokenType.Operator, "=" )
+        advance( TokenType.Literal )
+        advance( TokenType.RParen )
+        return parseVarDecl()
     }
 
     function parseFunctionDecl() {

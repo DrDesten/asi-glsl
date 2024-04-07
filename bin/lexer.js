@@ -9,6 +9,7 @@ export const TokenType = Object.freeze( {
     Whitespace: Symbol( "Whitespace" ),
     Newline: Symbol( "Newline" ),
 
+    Struct: Symbol( "Struct" ),
     VarDeclPrefix: Symbol( "VarDeclPrefix" ),
     Layout: Symbol( "Layout" ),
     If: Symbol( "If" ),
@@ -48,6 +49,7 @@ const Tokens = [
     new TokenMatcher( TokenType.Whitespace, /[^\S\n]+/, t => t.props.ignore = true ),
     new TokenMatcher( TokenType.Newline, /\r?\n/, t => t.props.merge = true ),
 
+    new TokenMatcher( TokenType.Struct, /struct/ ),
     new TokenMatcher( TokenType.VarDeclPrefix, /const|in|out|inout|attribute|uniform|varying|invariant|precise|buffer|shared|centroid|sample|patch|flat|smooth|noperspective/ ),
     new TokenMatcher( TokenType.Layout, /layout/ ),
     new TokenMatcher( TokenType.If, /if/ ),
@@ -63,8 +65,11 @@ const Tokens = [
     new TokenMatcher( TokenType.Return, /return/ ),
     new TokenMatcher( TokenType.Discard, /discard/ ),
 
-    new TokenMatcher( TokenType.Literal, /0b[01]+|0x[0-9a-fA-F]+|\d+/ ),
-    new TokenMatcher( TokenType.Literal, /(\d+\.\d*|\d*\.\d+)([eE][+-]?\d+)?/ ),
+    new TokenMatcher( TokenType.Literal, /true|false/, t => t.props.type = "bool" ),
+    new TokenMatcher( TokenType.Literal, /0[0-7]+|\d+|0[xX][0-9a-fA-F]+/, t => t.props.type = "int" ),
+    new TokenMatcher( TokenType.Literal, /(0[0-7]+|\d+|0[xX][0-9a-fA-F]+)[uU]/, t => t.props.type = "uint" ),
+    new TokenMatcher( TokenType.Literal, /(\d+\.\d+|\d+\.|\.\d+)([eE][+-]?\d+)?[fF]?|\d+[eE][+-]?\d+[fF]?/, t => t.props.type = "float" ),
+    new TokenMatcher( TokenType.Literal, /(\d+\.\d+|\d+\.|\.\d+)([eE][+-]?\d+)?[fF]?|\d+[eE][+-]?\d+(lf|LF)?/, t => t.props.type = "double" ),
     new TokenMatcher( TokenType.Identifier, /[a-zA-Z_][a-zA-Z0-9_]*/ ),
 
     new TokenMatcher( TokenType.Colon, /:/ ),
