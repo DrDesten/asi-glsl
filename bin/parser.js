@@ -281,7 +281,7 @@ export function Parse( tokens ) {
             case TokenType.Struct: {
                 return parseStruct()
             }
-            case TokenType.VarDeclPrefix: {
+            case TokenType.Qualifier: {
                 const stmt = parseVarDecl()
                 expectSemicolon()
                 return stmt
@@ -333,9 +333,8 @@ export function Parse( tokens ) {
 
     function parseVarDecl() {
         // Type
-        const type = []
-        while ( peek().type === TokenType.VarDeclPrefix ) type.push( advance() )
-        type.push( advance( TokenType.Identifier ) )
+        while ( advanceIf( TokenType.Qualifier ) ) {}
+        const type = advance( TokenType.Identifier )
 
         const decls = []
         do {
@@ -376,6 +375,7 @@ export function Parse( tokens ) {
         const args = []
         if ( !advanceIf( TokenType.RParen ) ) {
             do {
+                while ( advanceIf( TokenType.Qualifier ) ) {}
                 const type = advance( TokenType.Identifier ) // Argument Type
                 const ident = advance( TokenType.Identifier ) // Argument Name
                 args.push( new FunctionArg( type, ident ) )
@@ -580,6 +580,7 @@ export function Parse( tokens ) {
                     expr = new IndexExpr( expr, index )
                     continue
                 case TokenType.LParen:
+                    if ( peekStrict().type === TokenType.Newline ) break
                     advance()
                     const args = []
                     if ( peek().type !== TokenType.RParen ) do {

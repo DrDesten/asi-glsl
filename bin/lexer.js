@@ -9,9 +9,11 @@ export const TokenType = Object.freeze( {
     Whitespace: Symbol( "Whitespace" ),
     Newline: Symbol( "Newline" ),
 
+    Precision: Symbol( "Precision" ),
     Struct: Symbol( "Struct" ),
-    VarDeclPrefix: Symbol( "VarDeclPrefix" ),
     Layout: Symbol( "Layout" ),
+    Qualifier: Symbol( "Qualifier" ),
+
     If: Symbol( "If" ),
     Else: Symbol( "Else" ),
     For: Symbol( "For" ),
@@ -49,9 +51,16 @@ const Tokens = [
     new TokenMatcher( TokenType.Whitespace, /[^\S\n]+/, t => t.props.ignore = true ),
     new TokenMatcher( TokenType.Newline, /\r?\n/, t => t.props.merge = true ),
 
+    new TokenMatcher( TokenType.Precision, /precision/ ),
     new TokenMatcher( TokenType.Struct, /struct/ ),
-    new TokenMatcher( TokenType.VarDeclPrefix, /const|in|out|inout|attribute|uniform|varying|invariant|precise|buffer|shared|centroid|sample|patch|flat|smooth|noperspective/ ),
     new TokenMatcher( TokenType.Layout, /layout/ ),
+    new TokenMatcher( TokenType.Qualifier, /const|in|out|inout|varying|attribute|uniform|buffer|shared|centroid|sample|patch/, t => t.props.qualifier = "storage" ),
+    new TokenMatcher( TokenType.Qualifier, /smooth|flat|noperspective/, t => t.props.qualifier = "interpolation" ),
+    new TokenMatcher( TokenType.Qualifier, /highp|mediump|lowp/, t => t.props.qualifier = "precision" ),
+    new TokenMatcher( TokenType.Qualifier, /invariant/, t => t.props.qualifier = "variance" ),
+    new TokenMatcher( TokenType.Qualifier, /precise/, t => t.props.qualifier = "precise" ),
+    new TokenMatcher( TokenType.Qualifier, /coherent|volatile|restrict|readonly|writeonly/, t => t.props.qualifier = "memory" ),
+
     new TokenMatcher( TokenType.If, /if/ ),
     new TokenMatcher( TokenType.Else, /else/ ),
     new TokenMatcher( TokenType.For, /for/ ),
