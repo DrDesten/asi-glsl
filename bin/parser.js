@@ -282,23 +282,17 @@ export function Parse( tokens ) {
                 return parseStruct()
             }
             case TokenType.Qualifier: {
-                const stmt = parseVarDecl()
-                expectSemicolon()
-                return stmt
+                return parseVarDecl()
             }
             case TokenType.Layout: {
-                const stmt = parseLayout()
-                expectSemicolon()
-                return stmt
+                return parseLayout()
             }
             case TokenType.Identifier: {
                 if ( peek( 1 )?.type === TokenType.Identifier ) {
                     if ( peek( 2 )?.type === TokenType.LParen ) {
                         return parseFunctionDecl()
                     }
-                    const stmt = parseVarDecl()
-                    expectSemicolon()
-                    return stmt
+                    return parseVarDecl()
                 }
                 return parseStmt()
             }
@@ -354,17 +348,28 @@ export function Parse( tokens ) {
             decls.push( new VarDeclSingle( type, array, ident, initExpr ) )
         } while ( advanceIf( TokenType.Comma ) )
 
+        expectSemicolon()
         return new VarDecl( decls )
     }
 
     function parseLayout() {
         advance( TokenType.Layout )
         advance( TokenType.LParen )
-        advance( TokenType.Identifier, "location" )
-        advance( TokenType.Operator, "=" )
-        advance( TokenType.Literal )
+        if ( peek().type !== TokenType.RParen ) {
+            do {
+                advance( TokenType.Identifier )
+                advance( "=" )
+                parseExprSingle()
+            } while ( advanceIf( TokenType.Comma ) )
+        }
         advance( TokenType.RParen )
-        return parseVarDecl()
+
+        while ( advanceIf( TokenType.Qualifier ) ) {}
+        if ( advanceIf( TokenType.Identifier ) /* type */ ) {
+            advance( TokenType.Identifier ) // identifier
+        }
+
+        expectSemicolon()
     }
 
     function parseFunctionDecl() {

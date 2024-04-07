@@ -101,3 +101,4 @@ const Tokens = [
 ]
 
 export const GLSLLexer = new Lexer( Tokens, TokenType.Error, TokenType.EOF )
+export const CustomGLSLLexer = props => new Lexer( Tokens, TokenType.Error, TokenType, props )
