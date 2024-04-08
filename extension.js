@@ -135,7 +135,7 @@ function activate( context ) {
                     if ( count > 0 ) vscode.window.showInformationMessage( `Added ${count} Semicolon${"s".repeat( count != 1 )}` )
                 }
 
-            } /* else {
+            } else {
 
                 if ( addSemicolons ) {
                     const tokens = GLSLLexer.lex( searchString )
@@ -148,7 +148,7 @@ function activate( context ) {
                     if ( semicolons.length ) vscode.window.showInformationMessage( `Added ${semicolons.length} Semicolon${"s".repeat( semicolons.length != 1 )}` )
                 }
 
-            } */
+            }
 
             return edits
         }

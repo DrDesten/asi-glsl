@@ -23,7 +23,7 @@
 	"activationEvents": [
 		"onLanguage:glsl"
 	],
-	"main": "./extension.cjs",
+	"main": "./extension.js",
 	"type": "commonjs",
 	"contributes": {
 		"commands": [],
