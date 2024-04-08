@@ -1,5 +1,13 @@
 # Change Log
 
+## 2.0.0a
+- Switched from RegEx based language parsing to a handwritten lexer and recursive descent parser
+  - Semicolon insersion now covers most edge cases
+  - Parenthesis insersion covers more edge cases (such as with only one parenthesis missing
+  - Leaves room for more sophisticated methods of syntax error correction
+- While in alpha, the old RegEx based method can be enabled using the `Use Legacy Regex` option
+- Currently, `Lazy For` and `Lazy Constructors` are not supported by the new parser and will be disabled when `Use Legacy Regex` is not set
+
 ## 1.3.1
 - Fixed ASI adding semicolons after multiline macro escapes
 
@@ -14,15 +22,15 @@
 - Fixed ASI adding semicolons after ':', breaking `switch` statements
 
 ## 1.2.2
-- Added support for function calls inside of shorthand ifs with 'Add Argument Parentheses'
+- Added support for function calls inside of shorthand ifs with `Add Argument Parentheses` option
   - `if f(x) ...` => `if (f(x)) ...` will work
 
 ## 1.2.1
-- Added shorthand if support to 'Add Argument Parentheses'
+- Added shorthand if support with `Add Argument Parentheses` option
   - `if x ...` => `if (x) ...` will work, even without curly brackets (of course it has to be a one-liner, since it's shorthand if)
 
 ## 1.2.0
-- Improved Lazy `for`
+- Improved `Lazy For`
   - 3 different "laziness levels"
   - *Variable names instead of numbers are also valid, argument parentheses must not be used when 'Add Argument Parentheses' is enabled*
   - `for (5) {...}` => `for (int i = 0; i < 5; i++) {...}`
