@@ -574,8 +574,12 @@ function Parse( tokens ) {
     function parseBlock() {
         advance( TokenType.LBrace )
         const stmts = []
-        while ( !advanceIf( TokenType.RBrace ) )
-            stmts.push( parseDecl() )
+        while ( peek().type !== TokenType.RBrace ) {
+            const decl = parseDecl()
+            if ( decl === undefined ) break
+            stmts.push( decl )
+        }
+        advance( TokenType.RBrace )
         return new BlockStmt( stmts )
     }
 
