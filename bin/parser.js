@@ -692,7 +692,7 @@ function Parse( tokens ) {
     function parseReturn() {
         advance( TokenType.Return )
         let expr = null
-        if ( peekStrict().type !== TokenType.Newline ) {
+        if ( peek().type !== TokenType.Semicolon && peekStrict().type !== TokenType.Newline ) {
             expr = parseExpr()
         }
         expectSemicolon()

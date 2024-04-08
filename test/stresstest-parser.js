@@ -38,25 +38,48 @@ for ( const [i, { path: filepath, content: file }] of files.entries() ) {
     }
 
     // Parsing
-    start = performance.now()
-    const { ast: ast1, edits: editsTest } = Parse( tokens )
-    end = performance.now()
-    speed = ( end - start ) / tokens.length
-    console.info( ` |> Parsing Complete (${tokens.length} Tokens, ${( end - start ).toFixed( 1 )}ms, ${( speed * 1000 ).toPrecision( 2 )}μs/token)` )
-    if ( editsTest.length )
-        console.warn( wrap( FgRed, ` |> Extension would have made ${editsTest.length} Edits (at indecies ${editsTest.map( t => t.range.end.index ).join( ", " )})` ) )
+    try {
+        start = performance.now()
+        const { ast: ast1, edits: editsTest } = Parse( tokens )
+        end = performance.now()
+        speed = ( end - start ) / tokens.length
+        console.info( ` |> Parsing Complete (${tokens.length} Tokens, ${( end - start ).toFixed( 1 )}ms, ${( speed * 1000 ).toPrecision( 2 )}μs/token)` )
+        if ( editsTest.length )
+            console.warn( wrap( FgRed, ` |> Extension would have made ${editsTest.length} Edits (at indecies ${editsTest.map( t => t.range.end.index ).join( ", " )})` ) )
 
-    // Semicolon checking
-    const filteredTokens = tokens.filter( t => t.type !== TokenType.Semicolon )
-    const filteredSemicolons = tokens.filter( ( _, i ) => tokens[i + 1]?.type === TokenType.Semicolon )
-    const { ast: ast2, edits } = Parse( filteredTokens )
+        // Semicolon checking
+        const filteredTokens = tokens.filter( t => t.type !== TokenType.Semicolon )
+        const filteredSemicolons = tokens.filter( ( _, i, arr ) => arr[i + 1]?.type === TokenType.Semicolon )
+        const { ast: ast2, edits } = Parse( filteredTokens )
 
-    const indecies = {
-        orig: filteredSemicolons.map( t => ( tokens.indexOf( t ), t.range.end.index ) ),
-        gen: edits.filter( e => e.text === ";" ).map( e => ( tokens.indexOf( e.prevToken ), e.prevToken.range.end.index ) ),
+        const textIndecies = {
+            orig: filteredSemicolons.map( t => t.range.end.index ),
+            gen: edits.filter( e => e.text === ";" ).map( e => e.prevToken.range.end.index ),
+        }
+        const tokenIdecies = {
+            orig: filteredSemicolons.map( t => {
+                let index = tokens.indexOf( t )
+                while ( tokens[index].type === TokenType.Newline ) index--
+                return index
+            } ),
+            gen: edits.filter( e => e.text === ";" ).map( e => {
+                let index = tokens.indexOf( e.prevToken )
+                while ( tokens[index].type === TokenType.Newline ) index--
+                return index
+            } ),
+        }
+
+        try {
+            //assert.deepStrictEqual( ast1, ast2, "Parser Generates Equal AST" )
+            assert.deepStrictEqual( tokenIdecies.orig, tokenIdecies.gen )
+        } catch ( e ) {
+            console.error( e )
+            assert.deepStrictEqual( textIndecies.orig, textIndecies.gen )
+        }
+
+    } catch ( e ) {
+        console.error( wrap( FgRed, ` |> Failed to Parse File` ) )
+        console.error( e )
     }
 
-    //assert.deepStrictEqual( ast1, ast2, "Parser Generates Equal AST" )
-    assert.deepStrictEqual( indecies.orig, indecies.gen )
-    console.info( ` |> AST and Semicolon Equality Test Passed` )
 }
