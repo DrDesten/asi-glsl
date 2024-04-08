@@ -2,6 +2,8 @@
 
 ## 2.0.1
 - Parser can now parse interface blocks
+- Parser can now parse initializer lists
+- Fixed bug with empty returns
 
 ## 2.0.0
 - Switched from RegEx based language parsing to a handwritten lexer and recursive descent parser
