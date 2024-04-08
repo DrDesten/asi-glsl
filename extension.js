@@ -42,10 +42,10 @@ function activate( context ) {
             /////////////////////////////////////////////////////////////////////////////////////////////
             if ( addArgParentheses ) {
                 //let count = 0
-                searchString.replace( argparentheses, function () {
+                searchString.replace( argparentheses, function ( match, ...args ) {
 
-                    let startindex = arguments[arguments.length - 2]
-                    let endindex = startindex + arguments[0].length
+                    let startindex = args[args.length - 2]
+                    let endindex = startindex + match.length
 
                     edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), "(" ) )
                     edits.push( vscode.TextEdit.insert( document.positionAt( endindex ), ")" ) )
@@ -57,12 +57,12 @@ function activate( context ) {
 
             if ( lazyConstructors ) {
                 //let count = 0
-                searchString.replace( lazyconstructors, function () {
+                searchString.replace( lazyconstructors, function ( match, ...args ) {
 
-                    let startindex = arguments[arguments.length - 2]
-                    let endindex = startindex + arguments[0].length
+                    let startindex = args[args.length - 2]
+                    let endindex = startindex + match.length
 
-                    edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), arguments[1] + "(" ) )
+                    edits.push( vscode.TextEdit.insert( document.positionAt( startindex ), args[0] + "(" ) )
                     edits.push( vscode.TextEdit.insert( document.positionAt( endindex ), ")" ) )
                     //count++
                 } )
@@ -72,16 +72,16 @@ function activate( context ) {
             /////////////////////////////////////////////////////////////////////////////////////////////
             if ( lazyFor ) {
                 //let count = 0
-                searchString.replace( lazyfor, function () {
+                searchString.replace( lazyfor, function ( match, ...args ) {
 
-                    let startindex = arguments[arguments.length - 2]
-                    let endindex = startindex + arguments[0].length
+                    let startindex = args[args.length - 2]
+                    let endindex = startindex + match.length
                     const replaceRange = new vscode.Range( document.positionAt( startindex ), document.positionAt( endindex ) )
 
-                    const match1 = arguments[1] // Variable Type, Name, or interation Count
-                    const match2 = arguments[2] // Variable Name if type is specified
-                    const match3 = arguments[3] // Operator
-                    const match4 = arguments[4] // Interation Count if Variable Name is specified
+                    const match1 = args[0] // Variable Type, Name, or interation Count
+                    const match2 = args[1] // Variable Name if type is specified
+                    const match3 = args[2] // Operator
+                    const match4 = args[3] // Interation Count if Variable Name is specified
 
 
                     let replaceString = ""
