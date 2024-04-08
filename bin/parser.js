@@ -25,6 +25,22 @@ class StructMember extends Node {
     }
 }
 
+class InterfaceDecl extends Decl {
+    constructor( name, members, declarators ) {
+        super()
+        this.name = name
+        this.members = members
+        this.declarators = declarators
+    }
+}
+class InterfaceMember extends Node {
+    constructor( type, declarators ) {
+        super()
+        this.type = type
+        this.declarators = declarators
+    }
+}
+
 class VarDecl extends Decl {
     constructor( decls ) {
         super()
@@ -326,10 +342,10 @@ function Parse( tokens ) {
                 return
             }
             case TokenType.Struct: {
-                return parseStruct()
+                return parseStructDecl()
             }
             case TokenType.Qualifier: {
-                return parseVarDecl()
+                return parseQualifierDecl()
             }
             case TokenType.Layout: {
                 return parseLayout()
@@ -388,7 +404,19 @@ function Parse( tokens ) {
         return { name, array }
     }
 
-    function parseStruct() {
+    function parseQualifierDecl() {
+        parseQualifiers()
+
+        if ( peek().type === TokenType.Struct ) {
+            return parseStructDecl()
+        }
+        if ( peek( 1 ).type === TokenType.LBrace ) {
+            return parseInterfaceDecl()
+        }
+        return parseVarDecl()
+    }
+
+    function parseStructDecl() {
         advance( TokenType.Struct )
         const name = advanceIf( TokenType.Identifier )
         advance( TokenType.LBrace )
@@ -411,9 +439,32 @@ function Parse( tokens ) {
         return new StructDecl( name, members, declarators )
     }
 
+    function parseInterfaceDecl() {
+        const name = advance( TokenType.Identifier )
+        advance( TokenType.LBrace )
+
+        const members = []
+        while ( !advanceIf( TokenType.RBrace ) ) {
+            parseQualifiers()
+            const { name: type } = parseType()
+            const declarators = [parseDeclIdentifier().name]
+            while ( advanceIf( TokenType.Comma ) )
+                declarators.push( parseDeclIdentifier().name )
+            members.push( new InterfaceMember( type, declarators ) )
+            expectSemicolon()
+        }
+        const declarators = []
+        if ( peekStrict().type === TokenType.Identifier ) {
+            do {
+                declarators.push( parseDeclIdentifier() )
+            } while ( advanceIf( TokenType.Comma ) )
+        }
+        expectSemicolon()
+        return new InterfaceDecl( name, members, declarators )
+    }
+
     function parseVarDecl() {
         // Type
-        parseQualifiers()
         const { name: type, array: globalArray } = parseType()
 
         const decls = []

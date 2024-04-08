@@ -114,7 +114,16 @@ layout(location = 0) out vec4 FragOut0
 `
 
 text = `
-if true 2+2
+in Light {
+    vec4 LightPos;
+    vec3 LightColor;
+};
+in ColoredTexture {
+    vec4 Color;
+    vec2 TexCoord;
+} Material;           // instance name
+vec3 Color;           // different Color than Material.Color
+vec4 LightPos;
 `
 
 const originalSemicolons = [...text.matchAll( /;/g )].map( m => m.index )
