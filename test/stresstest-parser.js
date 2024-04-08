@@ -24,11 +24,16 @@ for ( const [i, { path: filepath, content: file }] of files.entries() ) {
     console.info( `Parsing ${filename}... (${i + 1}/${files.length}) ${wrap( dim, filepath )}` )
 
     // Lexing
+    start = performance.now()
     const tokens = GLSLLexer.lex( file )
+    end = performance.now()
+    speed = ( end - start ) / file.length
+    console.info( ` |> Lexing  Complete (${tokens.length} Tokens, ${( end - start ).toFixed( 1 )}ms, ${( speed * 1000 ).toPrecision( 2 )}μs/char)` )
+
     const errors = tokens.reduce( ( c, t ) => c + ( t.type === GLSLLexer.errorSymbol ), 0 )
     const errorChars = tokens.filter( t => t.type === GLSLLexer.errorSymbol ).map( t => "'" + t.text + "'" ).join( "," )
     if ( errors ) {
-        console.error( ` |> ${wrap( errors ? FgRed : "", `${errors} Errors` )}: ${errorChars}` )
+        console.error( wrap( FgRed, ` |> ${errors} Errors: ${errorChars}` ) )
         continue
     }
 
@@ -37,9 +42,9 @@ for ( const [i, { path: filepath, content: file }] of files.entries() ) {
     const { ast: ast1, edits: editsTest } = Parse( tokens )
     end = performance.now()
     speed = ( end - start ) / tokens.length
-    console.info( ` |> Parsing Complete (${tokens.length} Tokens, ${( end - start ).toPrecision( 3 )}ms, ${( speed * 1000 ).toPrecision( 2 )}μs/token)` )
+    console.info( ` |> Parsing Complete (${tokens.length} Tokens, ${( end - start ).toFixed( 1 )}ms, ${( speed * 1000 ).toPrecision( 2 )}μs/token)` )
     if ( editsTest.length )
-        console.warn( ` |> Extension would have placed ${wrap( FgRed, `${editsTest.length} Semicolons` )} (at indecies ${editsTest.map( t => t.range.end.index ).join( ", " )})` )
+        console.warn( wrap( FgRed, ` |> Extension would have made ${editsTest.length} Edits (at indecies ${editsTest.map( t => t.range.end.index ).join( ", " )})` ) )
 
     // Semicolon checking
     const filteredTokens = tokens.filter( t => t.type !== TokenType.Semicolon )

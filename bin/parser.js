@@ -152,6 +152,12 @@ class SequenceExpr extends Expr {
         this.exprs = exprs
     }
 }
+class InitializerListExpr extends Expr {
+    constructor( exprs ) {
+        super()
+        this.exprs = exprs
+    }
+}
 
 class ConditionalExpr extends Expr {
     constructor( condition, trueExpr, falseExpr ) {
@@ -305,6 +311,24 @@ function Parse( tokens ) {
             ) )
         } else {
             while ( advanceIf( TokenType.Semicolon ) ) {}
+        }
+    }
+    function expectComma() {
+        if ( !advanceIf( TokenType.Comma ) ) {
+            edits.push( new Edit(
+                tokens[index - 1],
+                tokens[index - 1].range.end.index,
+                ","
+            ) )
+        }
+    }
+    function expectColon() {
+        if ( !advanceIf( TokenType.Colon ) ) {
+            edits.push( new Edit(
+                tokens[index - 1],
+                tokens[index - 1].range.end.index,
+                ":"
+            ) )
         }
     }
     function expectLParen() {
@@ -692,7 +716,23 @@ function Parse( tokens ) {
     }
 
     function parseSingleExpr() {
+        switch ( peek().type ) {
+            case TokenType.LBrace: return parseInitializerList()
+        }
         return parseConditionalExpr()
+    }
+
+    function parseInitializerList() {
+        advance( TokenType.LBrace )
+        const exprs = []
+        while ( peek().type !== TokenType.RBrace ) {
+            exprs.push( parseSingleExpr() )
+            if ( peek().type !== TokenType.RBrace )
+                advance( TokenType.Comma )
+        }
+        advanceIf( TokenType.Comma )
+        advance( TokenType.RBrace )
+        return new InitializerListExpr( exprs )
     }
 
     function parseConditionalExpr() {

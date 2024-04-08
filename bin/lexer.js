@@ -54,7 +54,7 @@ const Tokens = [
     new TokenMatcher( TokenType.Precision, /precision/ ),
     new TokenMatcher( TokenType.Struct, /struct/ ),
     new TokenMatcher( TokenType.Layout, /layout/ ),
-    new TokenMatcher( TokenType.Qualifier, /const|in|out|varying|attribute|uniform|buffer|shared/, { qualifier: "storage" } ),
+    new TokenMatcher( TokenType.Qualifier, /const|inout|in|out|varying|attribute|uniform|buffer|shared/, { qualifier: "storage" } ),
     new TokenMatcher( TokenType.Qualifier, /centroid|sample|patch/, { qualifier: "aux storage" } ),
     new TokenMatcher( TokenType.Qualifier, /smooth|flat|noperspective/, { qualifier: "interpolation" } ),
     new TokenMatcher( TokenType.Qualifier, /highp|mediump|lowp/, { qualifier: "precision" } ),
