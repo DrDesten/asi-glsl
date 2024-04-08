@@ -1,11 +1,14 @@
 # Change Log
 
-## 2.0.0a
+## 2.0.1
+- Parser can now parse interface blocks
+
+## 2.0.0
 - Switched from RegEx based language parsing to a handwritten lexer and recursive descent parser
   - Semicolon insersion now covers most edge cases
   - Parenthesis insersion covers more edge cases (such as with only one parenthesis missing
   - Leaves room for more sophisticated methods of syntax error correction
-- While in alpha, the old RegEx based method can be enabled using the `Use Legacy Regex` option
+- For now, the old RegEx based method can be enabled using the `Use Legacy Regex` option
 - Currently, `Lazy For` and `Lazy Constructors` are not supported by the new parser and will be disabled when `Use Legacy Regex` is not set
 
 ## 1.3.1
