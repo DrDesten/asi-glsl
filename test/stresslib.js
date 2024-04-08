@@ -22,6 +22,7 @@ function readFileRecursiveSync( pathArg, filter ) {
 
     while ( dirs.length ) {
         const dir = dirs.shift()
+        dirs.push( ...getDirs( dir ) )
         const dirFiles = getFiles( dir )
         files.push( ...dirFiles )
     }
