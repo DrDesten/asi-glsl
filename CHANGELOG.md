@@ -1,5 +1,8 @@
 # Change Log
 
+## 2.0.2
+- Fixed bug where Parser would enter an infinite loop
+
 ## 2.0.1
 - Parser can now parse interface blocks
 - Parser can now parse initializer lists
