@@ -1,14 +1,10 @@
-import assert from "assert"
-import path from "path"
-import url from "url"
-import { GLSLLexer, TokenType } from "../bin/lexer.js"
-import { readFileSync, readdirSync, statSync } from "fs"
-import { performance } from "perf_hooks"
-import { FgRed, wrap } from "../lib/colors.js"
-import { Parse } from "../bin/parser.js"
-
-const __dirname = path.dirname( url.fileURLToPath( import.meta.url ) )
-const __cwd = process.cwd()
+const assert = require( "assert" )
+const path = require( "path" )
+const { GLSLLexer, TokenType } = require( "../bin/lexer.js" )
+const { readFileSync, readdirSync, statSync } = require( "fs" )
+const { performance } = require( "perf_hooks" )
+const { FgRed, wrap } = require( "../lib/colors.js" )
+const { Parse } = require( "../bin/parser.js" )
 
 const pathArg = process.argv[2]
 assert( pathArg, "No path argument provided." )

@@ -24,7 +24,7 @@
 		"onLanguage:glsl"
 	],
 	"main": "./extension.cjs",
-	"type": "module",
+	"type": "commonjs",
 	"contributes": {
 		"commands": [],
 		"configuration": {

@@ -21,24 +21,24 @@ function recursiveUnwrap( object ) {
 // Transparent Types 
 ///////////////////////
 
-export const VoidType = "void"
-export const BoolType = "bool"
+const VoidType = "void"
+const BoolType = "bool"
 
-export const ScalarTypes = ["int", "uint", "float", "double"]
-export const VectorTypes = ["vec2", "vec3", "vec4"]
+const ScalarTypes = ["int", "uint", "float", "double"]
+const VectorTypes = ["vec2", "vec3", "vec4"]
     .flatMap( t => ["", "d", "b", "i", "u"].map( prefix => prefix + t ) )
-export const MatrixTypes = ["mat2", "mat3", "mat4"]
+const MatrixTypes = ["mat2", "mat3", "mat4"]
     .flatMap( t => ["", "d"].map( p => p + t ) )
     .flatMap( t => ["", "x2", "x3", "x4"].map( suffix => t + suffix ) )
 
-export const NumericTypes = {
+const NumericTypes = {
     Scalar: ScalarTypes,
     Vector: VectorTypes,
     Matrix: MatrixTypes,
     all() { return recursiveUnwrap( this ) }
 }
 
-export const ValueTypes = {
+const ValueTypes = {
     Bool: [BoolType],
     Scalar: ScalarTypes,
     Vector: VectorTypes,
@@ -46,7 +46,7 @@ export const ValueTypes = {
     all() { return recursiveUnwrap( this ) }
 }
 
-export const TransparentTypes = {
+const TransparentTypes = {
     Void: [VoidType],
     Bool: [BoolType],
     Scalar: ScalarTypes,
@@ -60,7 +60,7 @@ export const TransparentTypes = {
 
 // Floating-Point Opaque Types
 
-export const FloatSamplerTypes = [
+const FloatSamplerTypes = [
     "sampler1D",
     "sampler1DShadow",
     "sampler1DArray",
@@ -81,17 +81,17 @@ export const FloatSamplerTypes = [
     "samplerBuffer",
 ]
 
-export const FloatTextureTypes = FloatSamplerTypes
+const FloatTextureTypes = FloatSamplerTypes
     .filter( t => !t.includes( "Shadow" ) )
     .map( t => t.replace( "sampler", "texture" ) )
 
-export const FloatImageTypes = FloatSamplerTypes
+const FloatImageTypes = FloatSamplerTypes
     .filter( t => !t.includes( "Shadow" ) )
     .map( t => t.replace( "sampler", "image" ) )
 
-export const FloatSubpassTypes = ["subpassInput", "subpassInputMS"]
+const FloatSubpassTypes = ["subpassInput", "subpassInputMS"]
 
-export const FloatOpaqueTypes = {
+const FloatOpaqueTypes = {
     FloatSamplerTypes,
     FloatTextureTypes,
     FloatImageTypes,
@@ -101,20 +101,20 @@ export const FloatOpaqueTypes = {
 
 // Signed Integer Opaque Types
 
-export const IntSamplerTypes = FloatSamplerTypes
+const IntSamplerTypes = FloatSamplerTypes
     .filter( t => !t.includes( "Shadow" ) )
     .map( t => "i" + t )
 
-export const IntTextureTypes = FloatTextureTypes
+const IntTextureTypes = FloatTextureTypes
     .map( t => "i" + t )
 
-export const IntImageTypes = FloatImageTypes
+const IntImageTypes = FloatImageTypes
     .map( t => "i" + t )
 
-export const IntSubpassTypes = FloatSubpassTypes
+const IntSubpassTypes = FloatSubpassTypes
     .map( t => "i" + t )
 
-export const IntOpaqueTypes = {
+const IntOpaqueTypes = {
     IntSamplerTypes,
     IntTextureTypes,
     IntImageTypes,
@@ -124,22 +124,22 @@ export const IntOpaqueTypes = {
 
 // Unsigned Integer Opaque Types
 
-export const UintSamplerTypes = FloatSamplerTypes
+const UintSamplerTypes = FloatSamplerTypes
     .filter( t => !t.includes( "Shadow" ) )
     .map( t => "u" + t )
 
-export const UintTextureTypes = FloatTextureTypes
+const UintTextureTypes = FloatTextureTypes
     .map( t => "u" + t )
 
-export const UintImageTypes = FloatImageTypes
+const UintImageTypes = FloatImageTypes
     .map( t => "u" + t )
 
-export const UintSubpassTypes = FloatSubpassTypes
+const UintSubpassTypes = FloatSubpassTypes
     .map( t => "u" + t )
 
-export const UintAtomicTypes = ["atomic_uint"]
+const UintAtomicTypes = ["atomic_uint"]
 
-export const UintOpaqueTypes = {
+const UintOpaqueTypes = {
     UintSamplerTypes,
     UintTextureTypes,
     UintImageTypes,
@@ -150,9 +150,9 @@ export const UintOpaqueTypes = {
 
 // Sampler Opaque Types
 
-export const SamplerTypes = ["sampler", "samplerShadow"]
+const SamplerTypes = ["sampler", "samplerShadow"]
 
-export const SamplerOpaqueTypes = {
+const SamplerOpaqueTypes = {
     SamplerTypes,
     all() { return recursiveUnwrap( this ) }
 }
@@ -161,7 +161,7 @@ export const SamplerOpaqueTypes = {
 // All Built-in Types
 ////////////////////////
 
-export const BuiltinTypes = {
+const BuiltinTypes = {
     TransparentTypes,
     FloatOpaqueTypes,
     IntOpaqueTypes,
@@ -170,4 +170,32 @@ export const BuiltinTypes = {
     all() { return recursiveUnwrap( this ) }
 }
 
-export default BuiltinTypes
+module.exports = {
+    VoidType,
+    BoolType,
+    ScalarTypes,
+    VectorTypes,
+    MatrixTypes,
+    NumericTypes,
+    ValueTypes,
+    TransparentTypes,
+    FloatSamplerTypes,
+    FloatTextureTypes,
+    FloatImageTypes,
+    FloatSubpassTypes,
+    FloatOpaqueTypes,
+    IntSamplerTypes,
+    IntTextureTypes,
+    IntImageTypes,
+    IntSubpassTypes,
+    IntOpaqueTypes,
+    UintSamplerTypes,
+    UintTextureTypes,
+    UintImageTypes,
+    UintSubpassTypes,
+    UintAtomicTypes,
+    UintOpaqueTypes,
+    SamplerTypes,
+    SamplerOpaqueTypes,
+    BuiltinTypes,
+}

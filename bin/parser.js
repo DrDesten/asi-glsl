@@ -1,5 +1,5 @@
-import { GLSLLexer, TokenType } from "./lexer.js"
-import { Token } from "../lib/lexer.js"
+const { GLSLLexer, TokenType } = require( "./lexer.js" )
+const { Token } = require( "../lib/lexer.js" )
 
 class Node {}
 
@@ -196,7 +196,7 @@ class IndexExpr extends Expr {
 // Parser
 
 /** @param {Token[]} tokens  */
-export function Parse( tokens ) {
+function Parse( tokens ) {
     let index = 0
     let semicolons = []
 
@@ -675,4 +675,8 @@ export function Parse( tokens ) {
         }
         return new LiteralExpr( advance( TokenType.Literal, TokenType.Identifier ) )
     }
+}
+
+module.exports = {
+    Parse
 }

@@ -1,6 +1,6 @@
-import { Position, Range, Token, TokenMatcher, Lexer } from "../lib/lexer.js"
+const { Position, Range, Token, TokenMatcher, Lexer } = require( "../lib/lexer.js" )
 
-export const TokenType = Object.freeze( {
+const TokenType = Object.freeze( {
     Error: Symbol( "Error" ),
     EOF: Symbol( "EOF" ),
 
@@ -102,5 +102,11 @@ const Tokens = [
     new TokenMatcher( TokenType.Operator, /(\+|\-|\*|\/|%|<<|>>|&|\^|\|)?=/, { operator: new Set( ["assignment"] ) } ),
 ]
 
-export const GLSLLexer = new Lexer( Tokens, TokenType.Error, TokenType.EOF )
-export const CustomGLSLLexer = props => new Lexer( Tokens, TokenType.Error, TokenType, props )
+const GLSLLexer = new Lexer( Tokens, TokenType.Error, TokenType.EOF )
+const CustomGLSLLexer = props => new Lexer( Tokens, TokenType.Error, TokenType, props )
+
+module.exports = {
+    TokenType,
+    GLSLLexer,
+    CustomGLSLLexer,
+}

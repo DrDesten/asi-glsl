@@ -1,7 +1,7 @@
-import { GLSLLexer } from "../bin/lexer.js"
-import { Parse } from "../bin/parser.js"
-import { visualize } from "../lib/lexervis.js"
-import util from "util"
+const { GLSLLexer } = require( "../bin/lexer.js" )
+const { Parse } = require( "../bin/parser.js" )
+const { visualize } = require( "../lib/lexervis.js" )
+const util = require( "util" )
 
 const string = `
 #define MACRO MACRO_BODY

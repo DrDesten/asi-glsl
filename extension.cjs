@@ -1,9 +1,9 @@
 
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import vscode from 'vscode'
-/* const { GLSLLexer } = await import( './bin/lexer.js' )
-const { Parse } = await import( './bin/parser.js' ) */
+const vscode = require( 'vscode' )
+const { GLSLLexer } = require( './bin/lexer.js' )
+const { Parse } = require( './bin/parser.js' )
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
