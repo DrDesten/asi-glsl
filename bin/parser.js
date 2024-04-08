@@ -195,13 +195,29 @@ class IndexExpr extends Expr {
 
 // Parser
 
-/** @param {Token[]} tokens  */
+class Edit {
+    /** @param {Token} prevToken @param {number} index @param {string} text */
+    constructor( prevToken, index, text ) {
+        this.prevToken = prevToken
+        this.index = index
+        this.text = text
+    }
+}
+
+/** 
+ * @param {Token[]} tokens
+ **/
 function Parse( tokens ) {
     let index = 0
-    let semicolons = []
 
-    let ast = parse()
-    return [ast, semicolons.map( index => tokens[index - 1] )]
+    /** @type {Edit[]} */
+    const edits = []
+    /** @type {Node[]} */
+    const ast = parse()
+    return {
+        ast: ast,
+        edits: edits
+    }
 
     function eof() {
         let i = index
@@ -266,9 +282,31 @@ function Parse( tokens ) {
 
     function expectSemicolon() {
         if ( !advanceIf( TokenType.Semicolon ) ) {
-            semicolons.push( index )
+            edits.push( new Edit(
+                tokens[index - 1],
+                tokens[index - 1].range.end.index,
+                ";"
+            ) )
         } else {
             while ( advanceIf( TokenType.Semicolon ) ) {}
+        }
+    }
+    function expectLParen() {
+        if ( !advanceIf( TokenType.LParen ) ) {
+            edits.push( new Edit(
+                tokens[index - 1],
+                tokens[index].range.start.index,
+                "("
+            ) )
+        }
+    }
+    function expectRParen() {
+        if ( !advanceIf( TokenType.RParen ) ) {
+            edits.push( new Edit(
+                tokens[index - 1],
+                tokens[index - 1].range.end.index,
+                ")"
+            ) )
         }
     }
 
@@ -468,9 +506,9 @@ function Parse( tokens ) {
 
     function parseIf() {
         advance( TokenType.If )
-        advance( TokenType.LParen )
+        expectLParen()
         const condition = parseExpr()
-        advance( TokenType.RParen )
+        expectRParen()
 
         const ifBlock = parseStmt()
         let elseBlock = null
@@ -483,9 +521,9 @@ function Parse( tokens ) {
 
     function parseSwitch() {
         advance( TokenType.Switch )
-        advance( TokenType.LParen )
+        expectLParen()
         const switchCondition = parseExpr()
-        advance( TokenType.RParen )
+        expectRParen()
 
         advance( TokenType.LBrace )
         const cases = []
@@ -518,30 +556,39 @@ function Parse( tokens ) {
 
     function parseFor() {
         advance( TokenType.For )
-        advance( TokenType.LParen )
+        expectLParen()
+
         let initExpr = null
-        if ( !advanceIf( TokenType.Semicolon ) ) {
+        if ( peek().type !== TokenType.Semicolon ) {
             initExpr = parseDecl() // parseDecl already expects a semicolon
+        } else {
+            advance( TokenType.Semicolon )
         }
+
         let condition = null
-        if ( !advanceIf( TokenType.Semicolon ) ) {
+        if ( peek().type !== TokenType.Semicolon ) {
             condition = parseExpr()
             expectSemicolon()
+        } else {
+            advance( TokenType.Semicolon )
         }
+
+        // TODO: handle missing loop expr better
         let loopExpr = null
         if ( !advanceIf( TokenType.RParen ) ) {
             loopExpr = parseExpr()
-            advance( TokenType.RParen )
+            expectRParen()
         }
+
         const body = parseStmt()
         return new ForStmt( initExpr, condition, loopExpr, body )
     }
 
     function parseWhile() {
         advance( TokenType.While )
-        advance( TokenType.LParen )
+        expectLParen()
         const condition = parseExpr()
-        advance( TokenType.RParen )
+        expectRParen()
         const body = parseStmt()
         return new WhileStmt( condition, body )
     }
@@ -550,9 +597,9 @@ function Parse( tokens ) {
         advance( TokenType.Do )
         const body = parseStmt()
         advance( TokenType.While )
-        advance( TokenType.LParen )
+        expectLParen()
         const condition = parseExpr()
-        advance( TokenType.RParen )
+        expectRParen()
         expectSemicolon()
         return new DoWhileStmt( condition, body )
     }

@@ -37,21 +37,21 @@ for ( const [i, filename, file] of files ) {
 
     // Parsing
     start = performance.now()
-    const [ast1, semicolonsTest] = Parse( tokens )
+    const { ast: ast1, edits: editsTest } = Parse( tokens )
     end = performance.now()
     speed = ( end - start ) / tokens.length
     console.info( ` |> Parsing Complete (${tokens.length} Tokens, ${( end - start ).toPrecision( 3 )}ms, ${( speed * 1000 ).toPrecision( 2 )}μs/token)` )
-    if ( semicolonsTest.length )
-        console.warn( ` |> Extension would have placed ${wrap( FgRed, `${semicolonsTest.length} Semicolons` )} (at indecies ${semicolonsTest.map( t => t.range.end.index ).join( ", " )})` )
+    if ( editsTest.length )
+        console.warn( ` |> Extension would have placed ${wrap( FgRed, `${editsTest.length} Semicolons` )} (at indecies ${editsTest.map( t => t.range.end.index ).join( ", " )})` )
 
     // Semicolon checking
     const filteredTokens = tokens.filter( t => t.type !== TokenType.Semicolon )
     const filteredSemicolons = tokens.filter( ( _, i ) => tokens[i + 1]?.type === TokenType.Semicolon )
-    const [ast2, semicolons] = Parse( filteredTokens )
+    const { ast: ast2, edits } = Parse( filteredTokens )
 
     const indecies = {
         orig: filteredSemicolons.map( t => ( tokens.indexOf( t ), t.range.end.index ) ),
-        gen: semicolons.map( t => ( tokens.indexOf( t ), t.range.end.index ) ),
+        gen: edits.filter( e => e.text === ";" ).map( e => ( tokens.indexOf( e.prevToken ), e.prevToken.range.end.index ) ),
     }
 
     //assert.deepStrictEqual( ast1, ast2, "Parser Generates Equal AST" )

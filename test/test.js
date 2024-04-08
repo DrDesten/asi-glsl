@@ -113,14 +113,15 @@ layout(location = 0) out vec4 FragOut0
 2 && 2
 `
 
+text = `
+if true 2+2
+`
+
 const originalSemicolons = [...text.matchAll( /;/g )].map( m => m.index )
 
 const tokens = GLSLLexer.lex( text.replace( /;/g, "" ) )
 console.log( tokens.map( t => [t.type, t.text] ) )
 
-const [ast, semicolons] = Parse( tokens )
-//console.log( util.inspect( ast, false, Infinity, true ) )
-//console.log( util.inspect( ast, false, 4, true ) )
-//console.log( semicolons.map( t => [t.text, t.range.end] ) )
-console.log( originalSemicolons )
-console.log( semicolons.map( ( t, i ) => t.range.end.index + i ) )
+const { ast, edits } = Parse( tokens )
+
+console.log( edits )
