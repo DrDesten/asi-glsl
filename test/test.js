@@ -127,15 +127,12 @@ vec4 LightPos;
 `
 
 text = `
-switch 0 {
-    case 0 break
-    default break
-}
+if (1+1.==0) return true;
 `
 
 const originalSemicolons = [...text.matchAll( /;/g )].map( m => m.index )
 
-const tokens = GLSLLexer.lex( text.replace( /;/g, "" ) )
+const tokens = GLSLLexer.lex( text || text.replace( /;/g, "" ) )
 console.log( tokens.map( t => [t.type, t.text, ...Object.values( t.props )] ) )
 
 const { ast, edits } = Parse( tokens )

@@ -196,13 +196,6 @@ class UnaryArithmeticExpr extends UnaryExpr {}
 class UnaryLogicalExpr extends UnaryExpr {}
 class UnaryBitwiseExpr extends UnaryExpr {}
 
-class LiteralExpr extends Expr {
-    constructor( literal ) {
-        super()
-        this.literal = literal
-    }
-}
-
 class CallExpression extends Expr {
     constructor( callee, args ) {
         super()
@@ -224,6 +217,253 @@ class IndexExpr extends Expr {
         super()
         this.target = target
         this.expr = expr
+    }
+}
+
+class LiteralExpr extends Expr {
+    constructor( literal ) {
+        super()
+        this.literal = literal
+    }
+}
+
+// Visitor
+
+class NodeVisitor {
+    /** @param {Node|Node[]} node */
+    visit( node ) {
+        if ( node instanceof Array ) {
+            return node.map( n => this.visit( n ) )
+        }
+        if ( !( node instanceof Node ) ) {
+            throw new Error( "Expected Node, got " + node )
+        }
+
+        const method = "visit" + node.constructor.name
+        const visitor = this[method]
+        if ( visitor ) {
+            return visitor.call( this, node )
+        } else {
+            throw new Error( "No visitor for node " + node.constructor.name )
+        }
+    }
+
+    visitSequenceExpr( node ) {
+        this.visit( node.exprs )
+    }
+
+    visitInitializerListExpr( node ) {
+        this.visit( node.exprs )
+    }
+
+    visitConditionalExpr( node ) {
+        this.visit( node.condition )
+        this.visit( node.trueExpr )
+        this.visit( node.falseExpr )
+    }
+
+    visitBinaryExpr( node ) {
+        this.visit( node.left )
+        this.visit( node.right )
+    }
+    visitAssignmentExpr( node ) { return this.visitBinaryExpr( node ) }
+    visitLogicalExpr( node ) { return this.visitBinaryExpr( node ) }
+    visitBitwiseExpr( node ) { return this.visitBinaryExpr( node ) }
+    visitShiftExpr( node ) { return this.visitBinaryExpr( node ) }
+    visitComparativeExpr( node ) { return this.visitBinaryExpr( node ) }
+    visitArithmeticExpr( node ) { return this.visitBinaryExpr( node ) }
+
+    visitUnaryExpr( node ) {
+        this.visit( node.expr )
+    }
+    visitUnaryArithmeticExpr( node ) { return this.visitUnaryExpr( node ) }
+    visitUnaryLogicalExpr( node ) { return this.visitUnaryExpr( node ) }
+    visitUnaryBitwiseExpr( node ) { return this.visitUnaryExpr( node ) }
+
+    visitCallExpression( node ) {
+        this.visit( node.callee )
+        this.visit( node.args )
+    }
+
+    visitAccessExpr( node ) {
+        this.visit( node.target )
+    }
+
+    visitIndexExpr( node ) {
+        this.visit( node.target )
+        this.visit( node.expr )
+    }
+
+    visitLiteralExpr( node ) {}
+}
+
+class GLSLType {
+    static Error = new GLSLType( "error" )
+    /** @param {string} name  */
+    constructor( name ) {
+        this.name = name
+    }
+
+    static implicitCommonType( type1, type2 ) {
+        if ( type1.name === type2.name ) return new GLSLType( type1.name )
+        if ( type1.isFloatingPoint() || type2.isFloatingPoint() ) {
+            if ( type1.isDouble() || type2.isDouble() ) {
+                if ( type1.isImplicitDoubleConvertable() && type2.isImplicitDoubleConvertable() )
+                    return new GLSLType( "double" )
+            } else {
+                if ( type1.isImplicitFloatConvertable() && type2.isImplicitFloatConvertable() )
+                    return new GLSLType( "float" )
+            }
+        }
+        if ( type1.isInteger() && type2.isInteger() ) {
+            if ( type1.isUint() || type2.isUint() ) {
+                if ( type1.isImplicitUintConvertable() && type2.isImplicitUintConvertable() )
+                    return new GLSLType( "uint" )
+            } else {
+                if ( type1.isImplicitIntConvertable() && type2.isImplicitIntConvertable() )
+                    return new GLSLType( "int" )
+            }
+        }
+        return GLSLType.Error
+    }
+
+    isImplicitIntConvertable() {
+        return this.isInt()
+    }
+    isImplicitUintConvertable() {
+        return this.isInt() || this.isUint()
+    }
+    isImplicitFloatConvertable() {
+        return this.isInt() || this.isUint() || this.isFloat()
+    }
+    isImplicitDoubleConvertable() {
+        return this.isInt() || this.isUint() || this.isFloat() || this.isDouble()
+    }
+
+    isVoid() {
+        return this.name === "void"
+    }
+    isBool() {
+        return this.name === "bool"
+    }
+
+    isInt() {
+        return this.name === "int"
+    }
+    isUint() {
+        return this.name === "uint"
+    }
+    isInteger() {
+        return this.isInt() || this.isUint()
+    }
+
+    isFloat() {
+        return this.name === "float"
+    }
+    isDouble() {
+        return this.name === "double"
+    }
+    isFloatingPoint() {
+        return this.isFloat() || this.isDouble()
+    }
+
+    isNumeric() {
+        return this.isInteger() || this.isFloatingPoint()
+    }
+}
+
+class TypeVisitor extends NodeVisitor {
+    constructor() {
+        super()
+        /** @type {Map<Node, GLSLType>} */
+        this.types = new WeakMap
+    }
+
+    visitSequenceExpr( node ) {
+        this.visit( node.exprs.at( -1 ) )
+        const type = this.types.get( node.exprs.at( -1 ) )
+        this.types.set( node, new GLSLType( type ) )
+    }
+    visitInitializerListExpr( node ) {
+        this.types.set( node, GLSLType.Error )
+    }
+
+    visitConditionalExpr( node ) {
+        this.visit( node.trueExpr )
+        this.visit( node.falseExpr )
+        const trueType = this.types.get( node.trueExpr )
+        const falseType = this.types.get( node.falseExpr )
+        const type = GLSLType.implicitCommonType( trueType, falseType )
+        this.types.set( node, new GLSLType( type ) )
+    }
+
+    visitAssignmentExpr( node ) {
+        this.types.set( node, GLSLType.Error )
+    }
+    visitLogicalExpr( node ) {
+        this.types.set( node, new GLSLType( "bool" ) )
+    }
+    visitBitwiseExpr( node ) {
+        this.visit( node.left )
+        this.visit( node.right )
+        const leftType = this.types.get( node.left )
+        const rightType = this.types.get( node.right )
+        const type = GLSLType.implicitCommonType( leftType, rightType )
+        this.types.set( node, new GLSLType( type.isInteger() ? type : GLSLType.Error ) )
+    }
+    visitShiftExpr( node ) {
+        this.visit( node.left )
+        this.visit( node.right )
+        const leftType = this.types.get( node.left )
+        const rightType = this.types.get( node.right )
+        const type = leftType.isInteger() && rightType.isInteger() ? leftType : GLSLType.Error
+        this.types.set( node, new GLSLType( type ) )
+    }
+    visitComparativeExpr( node ) {
+        this.types.set( node, new GLSLType( "bool" ) )
+    }
+    visitArithmeticExpr( node ) {
+        console.log( "visit", node )
+        this.visit( node.left )
+        this.visit( node.right )
+        const leftType = this.types.get( node.left )
+        const rightType = this.types.get( node.right )
+        const type = GLSLType.implicitCommonType( leftType, rightType )
+        this.types.set( node, new GLSLType( type.isNumeric() ? type : GLSLType.Error ) )
+    }
+
+    visitUnaryArithmeticExpr( node ) {
+        this.visit( node.expr )
+        const type = this.types.get( node.expr )
+        this.types.set( node, new GLSLType( type.isNumeric() ? type : GLSLType.Error ) )
+    }
+    visitUnaryLogicalExpr( node ) {
+        this.visit( node.expr )
+        const type = this.types.get( node.expr )
+        this.types.set( node, new GLSLType( type.isBool() ? type : GLSLType.Error ) )
+    }
+    visitUnaryBitwiseExpr( node ) {
+        this.visit( node.expr )
+        const type = this.types.get( node.expr )
+        this.types.set( node, new GLSLType( type.isInteger() ? type : GLSLType.Error ) )
+    }
+
+    visitCallExpression( node ) {
+        this.types.set( node, GLSLType.Error )
+    }
+    visitAccessExpr( node ) {
+        this.types.set( node, GLSLType.Error )
+    }
+    visitIndexExpr( node ) {
+        this.types.set( node, GLSLType.Error )
+    }
+
+    visitLiteralExpr( node ) {
+        const token = node.literal
+        const type = token.type === TokenType.Literal
+            ? token.props.type
+            : null
+        this.types.set( node, new GLSLType( type ) )
     }
 }
 
