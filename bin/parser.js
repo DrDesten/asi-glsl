@@ -445,7 +445,6 @@ class TypeVisitor extends NodeVisitor {
         this.types.set( node, GLSLType.Bool )
     }
     visitArithmeticExpr( node ) {
-        console.log( "visit", node )
         this.visit( node.left )
         this.visit( node.right )
         const leftType = this.types.get( node.left )
