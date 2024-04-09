@@ -1,6 +1,7 @@
 const { GLSLLexer, TokenType } = require( "./lexer.js" )
 const { Token } = require( "../lib/lexer.js" )
 
+
 class Node {}
 
 class Decl extends Node { constructor() { super() } }
@@ -178,12 +179,22 @@ class BinaryExpr extends Expr {
     }
 }
 
+class AssignmentExpr extends BinaryExpr {}
+class LogicalExpr extends BinaryExpr {}
+class BitwiseExpr extends BinaryExpr {}
+class ComparativeExpr extends BinaryExpr {}
+class ArithmeticExpr extends BinaryExpr {}
+
 class UnaryExpr extends Expr {
     constructor( expr ) {
         super()
         this.expr = expr
     }
 }
+
+class UnaryArithmeticExpr extends UnaryExpr {}
+class UnaryLogicalExpr extends UnaryExpr {}
+class UnaryBitwiseExpr extends UnaryExpr {}
 
 class LiteralExpr extends Expr {
     constructor( literal ) {
@@ -761,7 +772,7 @@ function Parse( tokens ) {
         let left = parseLogicalXorExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "logical or" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseLogicalXorExpr() )
+            left = new LogicalExpr( left, parseLogicalXorExpr() )
         }
         return left
     }
@@ -770,7 +781,7 @@ function Parse( tokens ) {
         let left = parseLogicalAndExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "logical xor" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseLogicalAndExpr() )
+            left = new LogicalExpr( left, parseLogicalAndExpr() )
         }
         return left
     }
@@ -779,7 +790,7 @@ function Parse( tokens ) {
         let left = parseOrExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "logical and" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseOrExpr() )
+            left = new LogicalExpr( left, parseOrExpr() )
         }
         return left
     }
@@ -788,7 +799,7 @@ function Parse( tokens ) {
         let left = parseXorExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "or" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseXorExpr() )
+            left = new BitwiseExpr( left, parseXorExpr() )
         }
         return left
     }
@@ -797,7 +808,7 @@ function Parse( tokens ) {
         let left = parseAndExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "xor" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseAndExpr() )
+            left = new BitwiseExpr( left, parseAndExpr() )
         }
         return left
     }
@@ -806,7 +817,7 @@ function Parse( tokens ) {
         let left = parseEqualityExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "and" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseEqualityExpr() )
+            left = new BitwiseExpr( left, parseEqualityExpr() )
         }
         return left
     }
@@ -815,7 +826,7 @@ function Parse( tokens ) {
         let left = parseRelationalExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "equality" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseRelationalExpr() )
+            left = new ComparativeExpr( left, parseRelationalExpr() )
         }
         return left
     }
@@ -824,7 +835,7 @@ function Parse( tokens ) {
         let left = parseShiftExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "relational" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseShiftExpr() )
+            left = new ComparativeExpr( left, parseShiftExpr() )
         }
         return left
     }
@@ -833,7 +844,7 @@ function Parse( tokens ) {
         let left = parseAdditiveExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "shift" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseAdditiveExpr() )
+            left = new BitwiseExpr( left, parseAdditiveExpr() )
         }
         return left
     }
@@ -842,7 +853,7 @@ function Parse( tokens ) {
         let left = parseMultiplicativeExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "additive" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseMultiplicativeExpr() )
+            left = new ArithmeticExpr( left, parseMultiplicativeExpr() )
         }
         return left
     }
@@ -851,19 +862,36 @@ function Parse( tokens ) {
         let left = parseUnaryExpr()
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "multiplicative" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parseUnaryExpr() )
+            left = new ArithmeticExpr( left, parseUnaryExpr() )
         }
         return left
     }
 
     function parseUnaryExpr() {
+        const operators = []
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "unary" ) ) {
-            advance( TokenType.Operator )
+            operators.push( advance( TokenType.Operator ) )
         }
-        const expr = parsePostfixExpr()
+        let expr = parsePostfixExpr()
+        for ( const operator of operators.reverse() ) {
+            switch ( operator.text ) {
+                case "+":
+                case "-":
+                case "++":
+                case "--":
+                    expr = new UnaryArithmeticExpr( expr ); break
+                case "!":
+                    expr = new UnaryLogicalExpr( expr ); break
+                case "~":
+                    expr = new UnaryBitwiseExpr( expr ); break
+                default:
+                    expr = new UnaryExpr( expr )
+            }
+        }
+
         if ( peek().type === TokenType.Operator && peek().props.operator.has( "assignment" ) ) {
             advance( TokenType.Operator )
-            return new BinaryExpr( expr, parseAssignmentExpr() )
+            expr = new AssignmentExpr( expr, parseAssignmentExpr() )
         }
         return expr
     }
@@ -898,7 +926,7 @@ function Parse( tokens ) {
                 case TokenType.Operator:
                     if ( token.props.operator.has( "postfix" ) ) {
                         advance()
-                        expr = new UnaryExpr( expr )
+                        expr = new UnaryArithmeticExpr( expr )
                         continue
                     }
             }
