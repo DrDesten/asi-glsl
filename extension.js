@@ -138,7 +138,7 @@ function activate( context ) {
 
             } else {
 
-                if ( addSemicolons || addArgParentheses ) {
+                if ( addSemicolons || addColons || addArgParentheses ) {
 
                     try {
 
