@@ -298,7 +298,15 @@ class NodeVisitor {
 }
 
 class GLSLType {
+
     static Error = new GLSLType( "error" )
+    static Void = new GLSLType( "void" )
+    static Bool = new GLSLType( "bool" )
+    static Int = new GLSLType( "int" )
+    static Uint = new GLSLType( "uint" )
+    static Float = new GLSLType( "float" )
+    static Double = new GLSLType( "double" )
+
     /** @param {string} name  */
     constructor( name ) {
         this.name = name
@@ -327,6 +335,20 @@ class GLSLType {
         return GLSLType.Error
     }
 
+    isImplicitConvertable( type ) {
+        switch ( type.name ) {
+            case "int":
+                return this.isImplicitIntConvertable()
+            case "uint":
+                return this.isImplicitUintConvertable()
+            case "float":
+                return this.isImplicitFloatConvertable()
+            case "double":
+                return this.isImplicitDoubleConvertable()
+            default:
+                return false
+        }
+    }
     isImplicitIntConvertable() {
         return this.isInt()
     }
@@ -401,7 +423,7 @@ class TypeVisitor extends NodeVisitor {
         this.types.set( node, GLSLType.Error )
     }
     visitLogicalExpr( node ) {
-        this.types.set( node, new GLSLType( "bool" ) )
+        this.types.set( node, GLSLType.Bool )
     }
     visitBitwiseExpr( node ) {
         this.visit( node.left )
@@ -420,7 +442,7 @@ class TypeVisitor extends NodeVisitor {
         this.types.set( node, new GLSLType( type ) )
     }
     visitComparativeExpr( node ) {
-        this.types.set( node, new GLSLType( "bool" ) )
+        this.types.set( node, GLSLType.Bool )
     }
     visitArithmeticExpr( node ) {
         console.log( "visit", node )
