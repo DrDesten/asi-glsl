@@ -611,7 +611,7 @@ function Parse( tokens ) {
         while ( !advanceIf( TokenType.RBrace ) ) {
             if ( advanceIf( TokenType.Case ) ) {
                 const caseCondition = parseExpr()
-                advance( TokenType.Colon )
+                expectColon()
 
                 const body = []
                 while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.RBrace ) {
@@ -623,7 +623,7 @@ function Parse( tokens ) {
             }
 
             advance( TokenType.Default )
-            advance( TokenType.Colon )
+            expectColon()
 
             const body = []
             while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.RBrace ) {

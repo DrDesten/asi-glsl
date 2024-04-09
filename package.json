@@ -40,10 +40,15 @@
 					"default": true,
 					"description": "Extension adds semicolons when formatting"
 				},
+				"asi-glsl.addColons": {
+					"type": "boolean",
+					"default": true,
+					"description": "Extension adds colons when formatting"
+				},
 				"asi-glsl.addArgumentParentheses": {
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Extension adds argument parentheses to `if` and `for` statements when formatting."
+					"markdownDescription": "Extension adds parentheses when formatting."
 				},
 				"asi-glsl.lazyFor": {
 					"type": "boolean",

@@ -21,6 +21,7 @@ function activate( context ) {
             const edits = []
             const useLegacyRegex = vscode.workspace.getConfiguration( "asi-glsl" ).get( "useLegacyRegex" )
             const addSemicolons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addSemicolons" )
+            const addColons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addColons" )
             const addArgParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addArgumentParentheses" )
             const lazyFor = vscode.workspace.getConfiguration( "asi-glsl" ).get( "lazyFor" )
             const lazyConstructors = vscode.workspace.getConfiguration( "asi-glsl" ).get( "lazyConstructors" )
@@ -145,11 +146,16 @@ function activate( context ) {
                         const { edits: parserEdits } = Parse( tokens )
                         console.log( parserEdits )
 
-                        const counts = { sem: 0, par: 0 }
+                        const counts = { sem: 0, col: 0, par: 0 }
+                        const names = { sem: ["Semicolon", "Semicolons"], col: ["Colon", "Colons"], par: ["Parenthesis", "Parentheses"] }
                         for ( const edit of parserEdits ) {
                             if ( addSemicolons && edit.text === ";" ) {
                                 edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
                                 counts.sem++
+                            }
+                            if ( addColons && edit.text === ":" ) {
+                                edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
+                                counts.col++
                             }
                             if ( addArgParentheses && ( edit.text === "(" || edit.text === ")" ) ) {
                                 edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
@@ -157,10 +163,11 @@ function activate( context ) {
                             }
                         }
 
-                        if ( counts.sem + counts.par )
-                            vscode.window.showInformationMessage(
-                                `Added ${counts.sem} Semicolon${counts.sem !== 1 ? "s" : ""} and ${counts.par} Parenthese${counts.par !== 1 ? "s" : ""}`
-                            )
+                        if ( Math.max( ...Object.values( counts ) ) !== 0 ) {
+                            const entries = Object.entries( counts ).filter( ( [, n] ) => n ).map( ( [key, count] ) => `${count} ${names[key][+( count !== 1 )]}` )
+                            const message = "Added " + ( entries.length === 1 ? entries[0] : entries.slice( 0, -1 ).join( ", " ) + " and " + entries.at( -1 ) )
+                            vscode.window.showInformationMessage( message )
+                        }
 
                     } catch ( e ) {
 

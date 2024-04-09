@@ -127,7 +127,10 @@ vec4 LightPos;
 `
 
 text = `
-vec2 sample = 10
+switch 0 {
+    case 0 break
+    default break
+}
 `
 
 const originalSemicolons = [...text.matchAll( /;/g )].map( m => m.index )
