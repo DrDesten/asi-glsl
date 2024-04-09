@@ -901,19 +901,21 @@ function Parse( tokens ) {
         while ( !eof() ) {
             const token = peek()
             switch ( token.type ) {
-                case TokenType.Dot:
+                case TokenType.Dot: {
                     advance()
                     const property = advance( TokenType.Identifier )
                     expr = new AccessExpr( expr, property )
                     continue
-                case TokenType.LBrack:
+                }
+                case TokenType.LBrack: {
                     advance()
                     let index = null
                     if ( peek().type !== TokenType.RBrack ) index = parseExpr()
                     advance( TokenType.RBrack )
                     expr = new IndexExpr( expr, index )
                     continue
-                case TokenType.LParen:
+                }
+                case TokenType.LParen: {
                     if ( peekStrict().type === TokenType.Newline ) break
                     advance()
                     const args = []
@@ -923,12 +925,14 @@ function Parse( tokens ) {
                     advance( TokenType.RParen )
                     expr = new CallExpression( expr, args )
                     continue
-                case TokenType.Operator:
+                }
+                case TokenType.Operator: {
                     if ( token.props.operator.has( "postfix" ) ) {
                         advance()
                         expr = new UnaryArithmeticExpr( expr )
                         continue
                     }
+                }
             }
             break
         }
