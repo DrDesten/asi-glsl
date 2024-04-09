@@ -310,7 +310,7 @@ function Parse( tokens ) {
     /** @param {...(Symbol|string)} conditions @returns {Token?} */
     function advanceIf( ...conditions ) {
         if ( checkConditions( peek(), ...conditions ) ) {
-            return advance( ...conditions )
+            return advance()
         }
         return null
     }
