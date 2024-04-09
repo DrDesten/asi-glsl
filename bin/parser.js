@@ -743,17 +743,13 @@ function Parse( tokens ) {
     }
 
     function parseAssignmentExpr() {
-        const expr = parseConditionalExpr()
-        if ( peek().type === TokenType.Operator && peek().props.operator.has( "assignment" ) ) {
-            advance( TokenType.Operator )
-            return new BinaryExpr( expr, parseAssignmentExpr() )
-        }
-        return expr
+        return parseConditionalExpr()
     }
 
     function parseConditionalExpr() {
         const condition = parseLogicalOrExpr()
         if ( peek().type === TokenType.Operator && peek().props.operator.has( "conditional" ) ) {
+            advance( TokenType.Operator )
             const trueExpr = parseExpr()
             advance( TokenType.Colon )
             return new ConditionalExpr( condition, trueExpr, parseAssignmentExpr() )
@@ -864,7 +860,12 @@ function Parse( tokens ) {
         while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "unary" ) ) {
             advance( TokenType.Operator )
         }
-        return parsePostfixExpr()
+        const expr = parsePostfixExpr()
+        if ( peek().type === TokenType.Operator && peek().props.operator.has( "assignment" ) ) {
+            advance( TokenType.Operator )
+            return new BinaryExpr( expr, parseAssignmentExpr() )
+        }
+        return expr
     }
 
     function parsePostfixExpr() {
