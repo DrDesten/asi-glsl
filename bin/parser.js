@@ -7,6 +7,8 @@ class Decl extends Node { constructor() { super() } }
 class Stmt extends Decl { constructor() { super() } }
 class Expr extends Node { constructor() { super() } }
 
+class ParserError extends Node { constructor() { super() } }
+
 // Declarations
 
 class StructDecl extends Decl {
@@ -498,7 +500,7 @@ function Parse( tokens ) {
             let initExpr = null
             if ( peek().text === "=" ) {
                 advance() // Equals Sign
-                initExpr = parseSingleExpr()
+                initExpr = parseInitializerExpr()
             }
 
             decls.push( new VarDeclSingle( type, globalArray.concat( array ), name, initExpr ) )
@@ -515,7 +517,7 @@ function Parse( tokens ) {
             do {
                 advance( TokenType.Identifier )
                 if ( advanceIf( "=" ) )
-                    parseSingleExpr()
+                    parseAssignmentExpr()
             } while ( advanceIf( TokenType.Comma ) )
         }
         advance( TokenType.RParen )
@@ -710,56 +712,156 @@ function Parse( tokens ) {
 
     // Expressions
 
-    /** @returns {Expr} */
-    function parseExpr() {
-        const exprs = []
-        do {
-            exprs.push( parseSingleExpr() )
-        } while ( advanceIf( TokenType.Comma ) )
-        return exprs.length === 1 ? exprs[0] : new SequenceExpr( exprs )
-    }
-
-    function parseSingleExpr() {
-        switch ( peek().type ) {
-            case TokenType.LBrace: return parseInitializerList()
+    function parseInitializerExpr() {
+        if ( peek().type === TokenType.LBrace ) {
+            return parseInitializerList()
         }
-        return parseConditionalExpr()
+        return parseAssignmentExpr()
     }
 
     function parseInitializerList() {
         advance( TokenType.LBrace )
         const exprs = []
         while ( peek().type !== TokenType.RBrace ) {
-            exprs.push( parseSingleExpr() )
-            if ( peek().type !== TokenType.RBrace )
+            exprs.push( parseInitializerExpr() )
+            if ( peek().type !== TokenType.RBrace ) {
                 advance( TokenType.Comma )
+            }
         }
         advanceIf( TokenType.Comma )
         advance( TokenType.RBrace )
         return new InitializerListExpr( exprs )
     }
 
+    /** @returns {Expr} */
+    function parseExpr() {
+        const exprs = []
+        do {
+            exprs.push( parseAssignmentExpr() )
+        } while ( advanceIf( TokenType.Comma ) )
+        return exprs.length === 1 ? exprs[0] : new SequenceExpr( exprs )
+    }
+
+    function parseAssignmentExpr() {
+        const expr = parseConditionalExpr()
+        if ( peek().type === TokenType.Operator && peek().props.operator.has( "assignment" ) ) {
+            advance( TokenType.Operator )
+            return new BinaryExpr( expr, parseAssignmentExpr() )
+        }
+        return expr
+    }
+
     function parseConditionalExpr() {
-        const condition = parseBinaryExpr()
-        if ( advanceIf( TokenType.Operator, "?" ) ) {
+        const condition = parseLogicalOrExpr()
+        if ( peek().type === TokenType.Operator && peek().props.operator.has( "conditional" ) ) {
             const trueExpr = parseExpr()
             advance( TokenType.Colon )
-            return new ConditionalExpr( condition, trueExpr, parseSingleExpr() )
+            return new ConditionalExpr( condition, trueExpr, parseAssignmentExpr() )
         }
         return condition
     }
 
-    function parseBinaryExpr() {
-        let left = parsePrefixExpr()
-        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "binary" ) ) {
+    function parseLogicalOrExpr() {
+        let left = parseLogicalXorExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "logical or" ) ) {
             advance( TokenType.Operator )
-            left = new BinaryExpr( left, parsePrefixExpr() )
+            left = new BinaryExpr( left, parseLogicalXorExpr() )
         }
         return left
     }
 
-    function parsePrefixExpr() {
-        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "prefix" ) ) {
+    function parseLogicalXorExpr() {
+        let left = parseLogicalAndExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "logical xor" ) ) {
+            advance( TokenType.Operator )
+            left = new BinaryExpr( left, parseLogicalAndExpr() )
+        }
+        return left
+    }
+
+    function parseLogicalAndExpr() {
+        let left = parseOrExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "logical and" ) ) {
+            advance( TokenType.Operator )
+            left = new BinaryExpr( left, parseOrExpr() )
+        }
+        return left
+    }
+
+    function parseOrExpr() {
+        let left = parseXorExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "or" ) ) {
+            advance( TokenType.Operator )
+            left = new BinaryExpr( left, parseXorExpr() )
+        }
+        return left
+    }
+
+    function parseXorExpr() {
+        let left = parseAndExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "xor" ) ) {
+            advance( TokenType.Operator )
+            left = new BinaryExpr( left, parseAndExpr() )
+        }
+        return left
+    }
+
+    function parseAndExpr() {
+        let left = parseEqualityExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "and" ) ) {
+            advance( TokenType.Operator )
+            left = new BinaryExpr( left, parseEqualityExpr() )
+        }
+        return left
+    }
+
+    function parseEqualityExpr() {
+        let left = parseRelationalExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "equality" ) ) {
+            advance( TokenType.Operator )
+            left = new BinaryExpr( left, parseRelationalExpr() )
+        }
+        return left
+    }
+
+    function parseRelationalExpr() {
+        let left = parseShiftExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "relational" ) ) {
+            advance( TokenType.Operator )
+            left = new BinaryExpr( left, parseShiftExpr() )
+        }
+        return left
+    }
+
+    function parseShiftExpr() {
+        let left = parseAdditiveExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "shift" ) ) {
+            advance( TokenType.Operator )
+            left = new BinaryExpr( left, parseAdditiveExpr() )
+        }
+        return left
+    }
+
+    function parseAdditiveExpr() {
+        let left = parseMultiplicativeExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "additive" ) ) {
+            advance( TokenType.Operator )
+            left = new BinaryExpr( left, parseMultiplicativeExpr() )
+        }
+        return left
+    }
+
+    function parseMultiplicativeExpr() {
+        let left = parseUnaryExpr()
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "multiplicative" ) ) {
+            advance( TokenType.Operator )
+            left = new BinaryExpr( left, parseUnaryExpr() )
+        }
+        return left
+    }
+
+    function parseUnaryExpr() {
+        while ( !eof() && peek().type === TokenType.Operator && peek().props.operator.has( "unary" ) ) {
             advance( TokenType.Operator )
         }
         return parsePostfixExpr()
@@ -787,7 +889,7 @@ function Parse( tokens ) {
                     advance()
                     const args = []
                     if ( peek().type !== TokenType.RParen ) do {
-                        args.push( parseSingleExpr() )
+                        args.push( parseAssignmentExpr() )
                     } while ( advanceIf( TokenType.Comma ) )
                     advance( TokenType.RParen )
                     expr = new CallExpression( expr, args )
@@ -796,11 +898,6 @@ function Parse( tokens ) {
                     if ( token.props.operator.has( "postfix" ) ) {
                         advance()
                         expr = new UnaryExpr( expr )
-                        continue
-                    }
-                    if ( token.props.operator.has( "assignment" ) ) {
-                        advance()
-                        expr = new BinaryExpr( expr, parseSingleExpr() )
                         continue
                     }
             }
