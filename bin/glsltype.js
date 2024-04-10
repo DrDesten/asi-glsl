@@ -24,8 +24,38 @@ class T {
     static Dvec3 = new T( T.Double, [3] )
     static Dvec4 = new T( T.Double, [4] )
 
+    static Mat2 = new T( T.Float, [2, 2] )
+    static Mat2x2 = T.Mat2
+    static Mat2x3 = new T( T.Float, [2, 3] )
+    static Mat2x4 = new T( T.Float, [2, 4] )
+    static Mat3 = new T( T.Float, [3, 3] )
+    static Mat3x3 = T.Mat3
+    static Mat3x2 = new T( T.Float, [3, 2] )
+    static Mat3x4 = new T( T.Float, [3, 4] )
+    static Mat4 = new T( T.Float, [4, 4] )
+    static Mat4x4 = T.Mat4
+    static Mat4x2 = new T( T.Float, [4, 2] )
+    static Mat4x3 = new T( T.Float, [4, 3] )
+
+    static Dmat2 = new T( T.Double, [2, 2] )
+    static Dmat2x2 = T.Dmat2
+    static Dmat2x3 = new T( T.Double, [2, 3] )
+    static Dmat2x4 = new T( T.Double, [2, 4] )
+    static Dmat3 = new T( T.Double, [3, 3] )
+    static Dmat3x3 = T.Dmat3
+    static Dmat3x2 = new T( T.Double, [3, 2] )
+    static Dmat3x4 = new T( T.Double, [3, 4] )
+    static Dmat4 = new T( T.Double, [4, 4] )
+    static Dmat4x4 = T.Dmat4
+    static Dmat4x2 = new T( T.Double, [4, 2] )
+    static Dmat4x3 = new T( T.Double, [4, 3] )
+
     static Scalars = [T.Bool, T.Int, T.Uint, T.Float, T.Double]
     static Vectors = [T.Bvec2, T.Bvec3, T.Bvec4, T.Ivec2, T.Ivec3, T.Ivec4, T.Uvec2, T.Uvec3, T.Uvec4, T.Vec2, T.Vec3, T.Vec4, T.Dvec2, T.Dvec3, T.Dvec4]
+    static Matrices = [
+        T.Mat2, T.Mat2x2, T.Mat2x3, T.Mat2x4, T.Mat3, T.Mat3x3, T.Mat3x2, T.Mat3x4, T.Mat4, T.Mat4x4, T.Mat4x2, T.Mat4x3,
+        T.Dmat2, T.Dmat2x2, T.Dmat2x3, T.Dmat2x4, T.Dmat3, T.Dmat3x3, T.Dmat3x2, T.Dmat3x4, T.Dmat4, T.Dmat4x4, T.Dmat4x2, T.Dmat4x3
+    ]
 
     /** @param {string|T} type */
     static new( type ) {
@@ -54,6 +84,30 @@ class T {
             case "dvec2": return T.Dvec2
             case "dvec3": return T.Dvec3
             case "dvec4": return T.Dvec4
+            case "mat2": return T.Mat2
+            case "mat2x2": return T.Mat2x2
+            case "mat2x3": return T.Mat2x3
+            case "mat2x4": return T.Mat2x4
+            case "mat3": return T.Mat3
+            case "mat3x3": return T.Mat3x3
+            case "mat3x2": return T.Mat3x2
+            case "mat3x4": return T.Mat3x4
+            case "mat4": return T.Mat4
+            case "mat4x4": return T.Mat4x4
+            case "mat4x2": return T.Mat4x2
+            case "mat4x3": return T.Mat4x3
+            case "dmat2": return T.Dmat2
+            case "dmat2x2": return T.Dmat2x2
+            case "dmat2x3": return T.Dmat2x3
+            case "dmat2x4": return T.Dmat2x4
+            case "dmat3": return T.Dmat3
+            case "dmat3x3": return T.Dmat3x3
+            case "dmat3x2": return T.Dmat3x2
+            case "dmat3x4": return T.Dmat3x4
+            case "dmat4": return T.Dmat4
+            case "dmat4x4": return T.Dmat4x4
+            case "dmat4x2": return T.Dmat4x2
+            case "dmat4x3": return T.Dmat4x3
         }
         return T.Error
     }
@@ -159,15 +213,12 @@ class T {
 
     /** @returns {T[]} */
     explicitConversions() {
-        if ( this === T.Void ) {
-            return [this]
-        }
         switch ( this ) {
-            case T.Bool: return [...T.Scalars, ...T.Vectors]
-            case T.Int: return [...T.Scalars, ...T.Vectors]
-            case T.Uint: return [...T.Scalars, ...T.Vectors]
-            case T.Float: return [...T.Scalars, ...T.Vectors]
-            case T.Double: return [...T.Scalars, ...T.Vectors]
+            case T.Bool: return [...T.Scalars, ...T.Vectors, ...T.Matrices]
+            case T.Int: return [...T.Scalars, ...T.Vectors, ...T.Matrices]
+            case T.Uint: return [...T.Scalars, ...T.Vectors, ...T.Matrices]
+            case T.Float: return [...T.Scalars, ...T.Vectors, ...T.Matrices]
+            case T.Double: return [...T.Scalars, ...T.Vectors, ...T.Matrices]
         }
         return []
     }
