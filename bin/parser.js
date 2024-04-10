@@ -220,6 +220,13 @@ class IndexExpr extends Expr {
     }
 }
 
+class IdentifierExpr extends Expr {
+    constructor( identifier ) {
+        super()
+        this.identifier = identifier
+    }
+}
+
 class LiteralExpr extends Expr {
     constructor( literal ) {
         super()
@@ -312,6 +319,7 @@ class GLSLType {
         this.name = name
     }
 
+    /** @param {GLSLType} type1 @param {GLSLType} type2 */
     static implicitCommonType( type1, type2 ) {
         if ( type1.name === type2.name ) return new GLSLType( type1.name )
         if ( type1.isFloatingPoint() || type2.isFloatingPoint() ) {
@@ -335,6 +343,50 @@ class GLSLType {
         return GLSLType.Error
     }
 
+    underlyingType() {
+        switch ( this.name ) {
+            case "void": return GLSLType.Void
+            case "bool": return GLSLType.Bool
+            case "int": return GLSLType.Int
+            case "uint": return GLSLType.Uint
+            case "float": return GLSLType.Float
+            case "double": return GLSLType.Double
+        }
+
+        if ( /^bvec[234]$/.test( this.name ) ) {
+            return GLSLType.Bool
+        }
+        if ( /^ivec[234]$/.test( this.name ) ) {
+            return GLSLType.Int
+        }
+        if ( /^uvec[234]$/.test( this.name ) ) {
+            return GLSLType.Uint
+        }
+        if ( /^vec[234]$/.test( this.name ) ) {
+            return GLSLType.Float
+        }
+        if ( /^dvec[234]$/.test( this.name ) ) {
+            return GLSLType.Double
+        }
+
+        if ( /^mat[234](x[234])?$/.test( this.name ) ) {
+            return GLSLType.Float
+        }
+        if ( /^dmat[234](x[234])?$/.test( this.name ) ) {
+            return GLSLType.Double
+        }
+
+        return GLSLType.Error
+    }
+
+    isScalar() {
+        return this.isBool() || this.isNumeric()
+    }
+    dimensionality() {
+
+    }
+
+    /** @param {GLSLType} type  */
     isImplicitConvertable( type ) {
         switch ( type.name ) {
             case "int":
@@ -353,13 +405,13 @@ class GLSLType {
         return this.isInt()
     }
     isImplicitUintConvertable() {
-        return this.isInt() || this.isUint()
+        return this.isImplicitIntConvertable() || this.isUint()
     }
     isImplicitFloatConvertable() {
-        return this.isInt() || this.isUint() || this.isFloat()
+        return this.isImplicitUintConvertable() || this.isFloat()
     }
     isImplicitDoubleConvertable() {
-        return this.isInt() || this.isUint() || this.isFloat() || this.isDouble()
+        return this.isImplicitFloatConvertable() || this.isDouble()
     }
 
     isVoid() {
@@ -470,6 +522,12 @@ class TypeVisitor extends NodeVisitor {
     }
 
     visitCallExpression( node ) {
+        const ident = node.callee
+        // Constructor Call
+        if ( ident instanceof IdentifierExpr && /^bool|u?int|float|double|[biu]?vec[234]|d?mat[234](x[234])?$/.test( ident.identifier ) ) {
+            this.types.set( node, new GLSLType( ident.identifier ) )
+            return
+        }
         this.types.set( node, GLSLType.Error )
     }
     visitAccessExpr( node ) {
@@ -768,6 +826,7 @@ function Parse( tokens ) {
         const decls = []
         do {
             const { name, array } = parseDeclIdentifier()
+            const finalArray = globalArray.concat( array )
 
             let initExpr = null
             if ( peek().text === "=" ) {
@@ -775,7 +834,7 @@ function Parse( tokens ) {
                 initExpr = parseInitializerExpr()
             }
 
-            decls.push( new VarDeclSingle( type, globalArray.concat( array ), name, initExpr ) )
+            decls.push( new VarDeclSingle( type, finalArray, name, initExpr ) )
         } while ( advanceIf( TokenType.Comma ) )
 
         expectSemicolon()
@@ -1206,7 +1265,10 @@ function Parse( tokens ) {
             advance( TokenType.RParen )
             return expr
         }
-        return new LiteralExpr( advance( TokenType.Literal, TokenType.Identifier ) )
+        const token = advance( TokenType.Literal, TokenType.Identifier )
+        return token.type === TokenType.literal
+            ? new LiteralExpr( token )
+            : new IdentifierExpr( token )
     }
 }
 
