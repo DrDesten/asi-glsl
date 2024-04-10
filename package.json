@@ -50,7 +50,7 @@
 					"default": true,
 					"description": "Extension adds parentheses when formatting."
 				},
-				"asi-glsl.addExplicitConversions": {
+				"asi-glsl.addExplicitTypeConversions": {
 					"type": "boolean",
 					"default": true,
 					"description": "If the extension detects a type error that can be fixed using an explicit type conversion, it will add the corresponding type conversion."

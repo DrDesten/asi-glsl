@@ -135,6 +135,6 @@ const originalSemicolons = [...text.matchAll( /;/g )].map( m => m.index )
 const tokens = GLSLLexer.lex( text || text.replace( /;/g, "" ) )
 console.log( tokens.map( t => [t.type, t.text, ...Object.values( t.props )] ) )
 
-const { ast, edits } = Parse( tokens )
+const { ast, edits, counts } = Parse( tokens )
 
-console.log( edits )
+console.log( edits, counts )

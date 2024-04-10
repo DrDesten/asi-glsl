@@ -429,17 +429,24 @@ class Edit {
 
 /** 
  * @param {Token[]} tokens
+ * @param {boolean} addSemicolons
+ * @param {boolean} addColons
+ * @param {boolean} addParentheses
+ * @param {boolean} addCommas
+ * @param {boolean} addExplicitTypeConversions
  **/
 function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, addExplicitTypeConversions } = new Proxy( {}, { get: () => true } ) ) {
     let index = 0
 
     /** @type {Edit[]} */
     const edits = []
+    const editCounts = { sem: 0, col: 0, par: 0, com: 0, conv: 0 }
     /** @type {Node[]} */
     const ast = parse()
     return {
         ast: ast,
-        edits: edits
+        edits: edits,
+        counts: editCounts,
     }
 
     function eof() {
@@ -531,7 +538,7 @@ function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, a
                 tokens[index - 1],
                 tokens[index - 1].range.end.index,
                 ";"
-            ) )
+            ) ), editCounts.sem++
         } else {
             while ( advanceIf( TokenType.Semicolon ) ) {}
         }
@@ -542,7 +549,7 @@ function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, a
                 tokens[index - 1],
                 tokens[index - 1].range.end.index,
                 ","
-            ) )
+            ) ), editCounts.com++
         }
     }
     function expectColon() {
@@ -551,7 +558,7 @@ function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, a
                 tokens[index - 1],
                 tokens[index - 1].range.end.index,
                 ":"
-            ) )
+            ) ), editCounts.col++
         }
     }
     function expectLParen() {
@@ -560,7 +567,7 @@ function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, a
                 tokens[index - 1],
                 tokens[index].range.start.index,
                 "("
-            ) )
+            ) ), editCounts.par++
         }
     }
     function expectRParen() {
@@ -569,7 +576,7 @@ function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, a
                 tokens[index - 1],
                 tokens[index - 1].range.end.index,
                 ")"
-            ) )
+            ) ), editCounts.par++
         }
     }
 
@@ -732,6 +739,7 @@ function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, a
                         const end = peek( -1 )
                         edits.push( new Edit( start, start.range.start.index, `${expectedType.identifier()}(` ) )
                         edits.push( new Edit( end, end.range.end.index, `)` ) )
+                        editCounts.conv++
                     }
                 }
             }
@@ -980,19 +988,8 @@ function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, a
     }
 
     function parseConditionalExpr() {
-        const start = peek()
         const condition = parseLogicalOrExpr()
         if ( peek().type === TokenType.Operator && peek().props.operator.has( "conditional" ) ) {
-
-            if ( addExplicitTypeConversions ) {
-                const type = TypeVisitor.typeof( condition )
-                if ( !type.implicitConvertableTo( T.Bool ) && type.explicitConvertableTo( T.Bool ) ) {
-                    const end = peek( -1 )
-                    edits.push( new Edit( start, start.range.start.index, "bool(" ) )
-                    edits.push( new Edit( end, end.range.end.index, ")" ) )
-                }
-            }
-
             advance( TokenType.Operator )
             const trueExpr = parseExpr()
             advance( TokenType.Colon )

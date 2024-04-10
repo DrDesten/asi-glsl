@@ -23,6 +23,7 @@ function activate( context ) {
             const addSemicolons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addSemicolons" )
             const addColons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addColons" )
             const addParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addParentheses" )
+            const addExplicitTypeConversions = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addExplicitTypeConversions" )
             const addArgParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addArgumentParentheses" )
             const lazyFor = vscode.workspace.getConfiguration( "asi-glsl" ).get( "lazyFor" )
             const lazyConstructors = vscode.workspace.getConfiguration( "asi-glsl" ).get( "lazyConstructors" )
@@ -144,24 +145,18 @@ function activate( context ) {
                     try {
 
                         const tokens = GLSLLexer.lex( documentText )
-                        const { edits: parserEdits } = Parse( tokens )
+                        const { edits: parserEdits, counts } = Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas: false, addExplicitTypeConversions } )
                         console.log( parserEdits )
 
-                        const counts = { sem: 0, col: 0, par: 0 }
-                        const names = { sem: ["Semicolon", "Semicolons"], col: ["Colon", "Colons"], par: ["Parenthesis", "Parentheses"] }
+                        const names = {
+                            sem: ["Semicolon", "Semicolons"],
+                            col: ["Colon", "Colons"],
+                            par: ["Parenthesis", "Parentheses"],
+                            com: ["Comma", "Commas"],
+                            conv: ["Explicit Type Conversion", "Explicit Type Conversions"]
+                        }
                         for ( const edit of parserEdits ) {
-                            if ( addSemicolons && edit.text === ";" ) {
-                                edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
-                                counts.sem++
-                            }
-                            if ( addColons && edit.text === ":" ) {
-                                edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
-                                counts.col++
-                            }
-                            if ( addParentheses && ( edit.text === "(" || edit.text === ")" ) ) {
-                                edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
-                                counts.par++
-                            }
+                            edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
                         }
 
                         if ( Math.max( ...Object.values( counts ) ) !== 0 ) {
