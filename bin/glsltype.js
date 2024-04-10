@@ -24,6 +24,9 @@ class T {
     static Dvec3 = new T( T.Double, [3] )
     static Dvec4 = new T( T.Double, [4] )
 
+    static Scalars = [T.Bool, T.Int, T.Uint, T.Float, T.Double]
+    static Vectors = [T.Bvec2, T.Bvec3, T.Bvec4, T.Ivec2, T.Ivec3, T.Ivec4, T.Uvec2, T.Uvec3, T.Uvec4, T.Vec2, T.Vec3, T.Vec4, T.Dvec2, T.Dvec3, T.Dvec4]
+
     /** @param {string|T} type */
     static new( type ) {
         if ( type instanceof T ) {
@@ -62,7 +65,7 @@ class T {
         }
         if ( shape.length === 1 ) {
             if ( shape[0] === 1 ) {
-                return underlyingType === T.Bool || underlyingType.isScalar()
+                return underlyingType === T.Bool || underlyingType.isNumeric()
                     ? underlyingType : T.Error
             }
             switch ( underlyingType ) {
@@ -98,7 +101,7 @@ class T {
         if ( this === T.Float ) return "float"
         if ( this === T.Double ) return "double"
 
-        if ( this.underlyingType !== T.Bool && !this.underlyingType.isScalar() )
+        if ( !this.underlyingType.isScalar() )
             return
 
         if ( this.shape.length === 1 && this.shape[0] >= 2 && this.shape <= 4 ) {
@@ -113,8 +116,11 @@ class T {
     isFloatingPoint() {
         return this === T.Float || this === T.Double
     }
-    isScalar() {
+    isNumeric() {
         return this.isInteger() || this.isFloatingPoint()
+    }
+    isScalar() {
+        return this.isNumeric() || this === T.Bool
     }
 
     rank() {
@@ -143,10 +149,32 @@ class T {
             case T.Float: return [T.Float, T.Double]
             case T.Double: return [T.Double]
         }
+        return []
     }
 
+    /** @param {T} type */
     implicitConvertableTo( type ) {
         return this.implicitConversions().includes( type )
+    }
+
+    /** @returns {T[]} */
+    explicitConversions() {
+        if ( this === T.Error || this === T.Void ) {
+            return [this]
+        }
+        switch ( this ) {
+            case T.Bool: return [...T.Scalars, ...T.Vectors]
+            case T.Int: return [...T.Scalars, ...T.Vectors]
+            case T.Uint: return [...T.Scalars, ...T.Vectors]
+            case T.Float: return [...T.Scalars, ...T.Vectors]
+            case T.Double: return [...T.Scalars, ...T.Vectors]
+        }
+        return []
+    }
+
+    /** @param {T} type */
+    explicitConvertableTo( type ) {
+        return this.explicitConversions().includes( type )
     }
 
 }

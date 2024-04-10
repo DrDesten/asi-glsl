@@ -362,13 +362,13 @@ class TypeVisitor extends NodeVisitor {
         const leftType = this.types.get( node.left )
         const rightType = this.types.get( node.right )
         const type = T.implicitCommonType( leftType, rightType )
-        this.types.set( node, type.underlyingType.isScalar() ? type : T.Error )
+        this.types.set( node, type.underlyingType.isNumeric() ? type : T.Error )
     }
 
     visitUnaryArithmeticExpr( node ) {
         this.visit( node.expr )
         const type = this.types.get( node.expr )
-        this.types.set( node, type.underlyingType.isScalar() ? type : T.Error )
+        this.types.set( node, type.underlyingType.isNumeric() ? type : T.Error )
     }
     visitUnaryLogicalExpr( node ) {
         this.visit( node.expr )
