@@ -127,13 +127,7 @@ vec4 LightPos;
 `
 
 text = `
-1 == 1
-~(1-1u)
-1 + 1
-1 + 1u
-1. + 1
-1. + 1e0lf
-ivec3(0) * vec3(1)
+int x = true
 `
 
 const originalSemicolons = [...text.matchAll( /;/g )].map( m => m.index )
@@ -143,4 +137,4 @@ console.log( tokens.map( t => [t.type, t.text, ...Object.values( t.props )] ) )
 
 const { ast, edits } = Parse( tokens )
 
-//console.log( edits )
+console.log( edits )

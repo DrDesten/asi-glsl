@@ -140,7 +140,7 @@ class T {
             const underlyingConversions = this.underlyingType.implicitConversions()
             return underlyingConversions.map( t => T.from( t, this.shape ) )
         }
-        if ( this === T.Error || this === T.Void || this === T.Bool ) {
+        if ( this === T.Void || this === T.Bool ) {
             return [this]
         }
         switch ( this ) {
@@ -159,7 +159,7 @@ class T {
 
     /** @returns {T[]} */
     explicitConversions() {
-        if ( this === T.Error || this === T.Void ) {
+        if ( this === T.Void ) {
             return [this]
         }
         switch ( this ) {
