@@ -133,7 +133,7 @@ text = `
 1 + 1u
 1. + 1
 1. + 1e0lf
-vec3(0)
+ivec3(0) * vec3(1)
 `
 
 const originalSemicolons = [...text.matchAll( /;/g )].map( m => m.index )
