@@ -22,6 +22,7 @@ function activate( context ) {
             const useLegacyRegex = vscode.workspace.getConfiguration( "asi-glsl" ).get( "useLegacyRegex" )
             const addSemicolons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addSemicolons" )
             const addColons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addColons" )
+            const addParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addParentheses" )
             const addArgParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addArgumentParentheses" )
             const lazyFor = vscode.workspace.getConfiguration( "asi-glsl" ).get( "lazyFor" )
             const lazyConstructors = vscode.workspace.getConfiguration( "asi-glsl" ).get( "lazyConstructors" )
@@ -138,7 +139,7 @@ function activate( context ) {
 
             } else {
 
-                if ( addSemicolons || addColons || addArgParentheses ) {
+                if ( addSemicolons || addColons || addParentheses ) {
 
                     try {
 
@@ -157,7 +158,7 @@ function activate( context ) {
                                 edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
                                 counts.col++
                             }
-                            if ( addArgParentheses && ( edit.text === "(" || edit.text === ")" ) ) {
+                            if ( addParentheses && ( edit.text === "(" || edit.text === ")" ) ) {
                                 edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
                                 counts.par++
                             }

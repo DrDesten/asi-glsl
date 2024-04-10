@@ -421,21 +421,10 @@ class Edit {
     }
 }
 
-{
-    class Edit {
-        /** @param {"insert"|"replace"} mode @param {[number,number]} range @param {string} text  */
-        constructor( mode, range, text ) {
-            this.mode = mode
-            this.range = range
-            this.text = text
-        }
-    }
-}
-
 /** 
  * @param {Token[]} tokens
  **/
-function Parse( tokens ) {
+function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, addExplicitTypeConversions } ) {
     let index = 0
 
     /** @type {Edit[]} */
@@ -453,6 +442,9 @@ function Parse( tokens ) {
         return tokens[i].type === TokenType.EOF
     }
     function calcOffset( count ) {
+        return ( count >= 0 ? calcPositiveOffset : calcNegativeOffset )( count )
+    }
+    function calcPositiveOffset( count ) {
         let offset = 0
         while ( !eof() ) {
             // Skip all newlines
@@ -462,6 +454,20 @@ function Parse( tokens ) {
             }
             // Next token isn't a newline, check `count`
             if ( count ) count--, offset++
+            else break
+        }
+        return offset
+    }
+    function calcNegativeOffset( count ) {
+        let offset = 0
+        while ( index + offset >= 0 ) {
+            // Skip all newlines
+            if ( tokens[index + offset].type === TokenType.Newline ) {
+                offset--
+                continue
+            }
+            // Next token isn't a newline, check `count`
+            if ( count ) count++, offset--
             else break
         }
         return offset
