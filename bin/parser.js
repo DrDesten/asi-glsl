@@ -421,6 +421,17 @@ class Edit {
     }
 }
 
+{
+    class Edit {
+        /** @param {"insert"|"replace"} mode @param {[number,number]} range @param {string} text  */
+        constructor( mode, range, text ) {
+            this.mode = mode
+            this.range = range
+            this.text = text
+        }
+    }
+}
+
 /** 
  * @param {Token[]} tokens
  **/
@@ -933,15 +944,11 @@ function Parse( tokens ) {
         do {
             exprs.push( parseAssignmentExpr() )
         } while ( advanceIf( TokenType.Comma ) )
-        const expr = exprs.length === 1 ? exprs[0] : new SequenceExpr( exprs )
-        return expr
+        return exprs.length === 1 ? exprs[0] : new SequenceExpr( exprs )
     }
 
     function parseAssignmentExpr() {
-        const expr = parseConditionalExpr()
-        const type = ( () => { const v = new TypeVisitor; v.visit( expr ); return v.types.get( expr ) } )()
-        console.log( type.identifier() )
-        return expr
+        return parseConditionalExpr()
     }
 
     function parseConditionalExpr() {
