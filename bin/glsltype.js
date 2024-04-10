@@ -158,9 +158,20 @@ class T {
         if ( !this.underlyingType.isScalar() )
             return
 
-        if ( this.shape.length === 1 && this.shape[0] >= 2 && this.shape <= 4 ) {
+        // Vector Types
+        if ( this.shape.length === 1 && this.shape[0] >= 2 && this.shape[0] <= 4 ) {
             const prefix = { bool: "b", int: "i", uint: "u", float: "", double: "d" }[this.underlyingType.identifier()]
             return `${prefix}vec${this.shape[0]}`
+        }
+
+        if ( !this.underlyingType.isFloatingPoint() || this.shape.length !== 2 )
+            return
+
+        // Matrix Types
+        if ( this.shape[0] >= 2 && this.shape[0] <= 4 && this.shape[1] >= 2 && this.shape[1] <= 4 ) {
+            const prefix = { float: "", double: "d" }[this.underlyingType.identifier()]
+            const square = this.shape[0] === this.shape[1]
+            return `${prefix}mat${this.shape[0]}${square ? "" : "x" + this.shape[1]}`
         }
     }
 
