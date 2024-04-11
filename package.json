@@ -33,42 +33,42 @@
 				"asi-glsl.useLegacyRegex": {
 					"type": "boolean",
 					"default": false,
-					"description": "Extension uses regex to provide its features."
+					"markdownDescription": "Extension uses regex to provide its features."
 				},
 				"asi-glsl.addSemicolons": {
 					"type": "boolean",
 					"default": true,
-					"description": "Extension adds semicolons when formatting"
+					"markdownDescription": "Extension adds semicolons when formatting."
 				},
 				"asi-glsl.addColons": {
 					"type": "boolean",
 					"default": true,
-					"description": "Extension adds colons when formatting. Incompatible with `Use Legacy Regex`."
+					"markdownDescription": "Extension adds colons when formatting.  \nIncompatible with `Use Legacy Regex`."
 				},
 				"asi-glsl.addParentheses": {
 					"type": "boolean",
 					"default": true,
-					"description": "Extension adds parentheses when formatting. Incompatible with `Use Legacy Regex`."
+					"markdownDescription": "Extension adds parentheses when formatting.  \nIncompatible with `Use Legacy Regex`."
 				},
 				"asi-glsl.addExplicitTypeConversions": {
 					"type": "boolean",
 					"default": true,
-					"description": "If the extension detects a type error that can be fixed using an explicit type conversion, it will add the corresponding type conversion. Incompatible with `Use Legacy Regex`."
+					"markdownDescription": "If the extension detects a type error that can be fixed using an explicit type conversion, it will add the corresponding type conversion.  \nIncompatible with `Use Legacy Regex`."
 				},
 				"asi-glsl.addArgumentParentheses": {
 					"type": "boolean",
 					"default": true,
-					"description": "Extension adds parentheses to `if` and `for` statements when formatting. Disabled unless `Use Legacy Regex`."
+					"markdownDescription": "Extension adds parentheses to `if` and `for` statements when formatting.  \nDisabled unless `Use Legacy Regex`."
 				},
 				"asi-glsl.lazyFor": {
 					"type": "boolean",
 					"default": false,
-					"description": "Shorthand `for` syntax. Extension converts `for (int i < x) {` into `for (int i = 0; i < x; i++) {`. A type for the iterator can be specified, default is `int`. Disabled unless `Use Legacy Regex`."
+					"markdownDescription": "Shorthand `for` syntax. Extension converts `for (int i < x) {` into `for (int i = 0; i < x; i++) {`. A type for the iterator can be specified, default is `int`.  \nDisabled unless `Use Legacy Regex`."
 				},
 				"asi-glsl.lazyConstructors": {
 					"type": "boolean",
 					"default": false,
-					"description": "Shorthand vector and matrix initialisation syntax. Extension converts `vecn var = 0` into `vecn var = vecn(0)`. Also works with matrix constructors. Disabled unless `Use Legacy Regex`."
+					"markdownDescription": "Shorthand vector and matrix initialisation syntax. Extension converts `vecn var = 0` into `vecn var = vecn(0)`. Also works with matrix constructors.  \nDisabled unless `Use Legacy Regex`."
 				}
 			}
 		}
