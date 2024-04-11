@@ -58,17 +58,17 @@
 				"asi-glsl.addArgumentParentheses": {
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Extension adds parentheses to `if` and `for` statements when formatting.  \nDisabled unless `Use Legacy Regex`."
+					"markdownDescription": "Extension adds parentheses to `if` and `for` statements when formatting.  \nRequires `Use Legacy Regex`."
 				},
 				"asi-glsl.lazyFor": {
 					"type": "boolean",
 					"default": false,
-					"markdownDescription": "Shorthand `for` syntax. Extension converts `for (int i < x) {` into `for (int i = 0; i < x; i++) {`. A type for the iterator can be specified, default is `int`.  \nDisabled unless `Use Legacy Regex`."
+					"markdownDescription": "Shorthand `for` syntax. Extension converts `for (int i < x) {` into `for (int i = 0; i < x; i++) {`. A type for the iterator can be specified, default is `int`.  \nRequires `Use Legacy Regex`."
 				},
 				"asi-glsl.lazyConstructors": {
 					"type": "boolean",
 					"default": false,
-					"markdownDescription": "Shorthand vector and matrix initialisation syntax. Extension converts `vecn var = 0` into `vecn var = vecn(0)`. Also works with matrix constructors.  \nDisabled unless `Use Legacy Regex`."
+					"markdownDescription": "Shorthand vector and matrix initialisation syntax. Extension converts `vecn var = 0` into `vecn var = vecn(0)`. Also works with matrix constructors.  \nRequires `Use Legacy Regex`."
 				}
 			}
 		}
