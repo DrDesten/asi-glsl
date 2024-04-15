@@ -1,7 +1,6 @@
 const assert = require( "assert" )
 const path = require( "path" )
 const { GLSLLexer, TokenType } = require( "../bin/lexer.js" )
-const { readFileSync, readdirSync, statSync } = require( "fs" )
 const { performance } = require( "perf_hooks" )
 const { FgRed, wrap, dim } = require( "../lib/colors.js" )
 const { Parse } = require( "../bin/parser.js" )

@@ -1,7 +1,6 @@
 const assert = require( "assert" )
 const path = require( "path" )
 const { GLSLLexer } = require( "../bin/lexer.js" )
-const { readFileSync, readdirSync, statSync } = require( "fs" )
 const { performance } = require( "perf_hooks" )
 const { FgRed, wrap } = require( "../lib/colors.js" )
 const { readFileRecursiveSync } = require( "./stresslib.js" )
