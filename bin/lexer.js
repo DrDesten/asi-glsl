@@ -111,11 +111,11 @@ const Tokens = [
     new TokenMatcher( TokenType.Operator, /(\+|\-|\*|\/|%|<<|>>|&|\^|\|)?=/, { operator: new Set( ["assignment"] ) } ),
 ]
 
-const GLSLLexer = new Lexer( Tokens, TokenType.Error, TokenType.EOF )
-const CustomGLSLLexer = props => new Lexer( Tokens, TokenType.Error, TokenType, props )
+function GLSLLexer( version = Infinity, props = {} ) {
+    return new Lexer( Tokens, TokenType.Error, TokenType.EOF, props )
+}
 
 module.exports = {
     TokenType,
     GLSLLexer,
-    CustomGLSLLexer,
 }

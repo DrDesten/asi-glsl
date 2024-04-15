@@ -26,14 +26,15 @@ for ( const [i, { path: filepath, content: file }] of files.entries() ) {
     let message = ""
 
     // Lexing
+    const lexer = GLSLLexer()
     start = performance.now()
-    const tokens = GLSLLexer.lex( file )
+    const tokens = lexer.lex( file )
     end = performance.now()
     speed = ( end - start ) / file.length
     message += ` |> Lexing: (${tokens.length} Tokens, ${( end - start ).toFixed( 1 )}ms, ${( speed * 1000 ).toPrecision( 2 )}μs/char)`
 
-    const errors = tokens.reduce( ( c, t ) => c + ( t.type === GLSLLexer.errorSymbol ), 0 )
-    const errorChars = tokens.filter( t => t.type === GLSLLexer.errorSymbol ).map( t => "'" + t.text + "'" ).join( "," )
+    const errors = tokens.reduce( ( c, t ) => c + ( t.type === lexer.errorSymbol ), 0 )
+    const errorChars = tokens.filter( t => t.type === lexer.errorSymbol ).map( t => "'" + t.text + "'" ).join( "," )
     if ( errors ) {
         console.info( message )
         console.error( wrap( FgRed, ` |> ${errors} Errors: ${errorChars}` ) )

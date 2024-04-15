@@ -1,6 +1,6 @@
 const assert = require( "assert" )
 const path = require( "path" )
-const { CustomGLSLLexer, GLSLLexer } = require( "../bin/lexer.js" )
+const { GLSLLexer } = require( "../bin/lexer.js" )
 const { readFileSync, readdirSync, statSync } = require( "fs" )
 const { performance } = require( "perf_hooks" )
 const { FgRed, wrap } = require( "../lib/colors.js" )
@@ -17,7 +17,7 @@ console.info( `[ ${files.map( ( { path: p } ) => path.basename( p ) ).join( ", "
 
 // Lexing
 
-const lexer = CustomGLSLLexer( { postprocess: false } )
+const lexer = GLSLLexer( undefined, { postprocess: false } )
 
 for ( const [i, { path: filepath, content: file }] of files.entries() ) {
     let start, end, speed

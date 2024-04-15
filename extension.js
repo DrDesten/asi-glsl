@@ -144,7 +144,7 @@ function activate( context ) {
 
                     try {
 
-                        const tokens = GLSLLexer.lex( documentText )
+                        const tokens = GLSLLexer().lex( documentText )
                         const { edits: parserEdits, counts } = Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas: false, addExplicitTypeConversions } )
                         console.log( parserEdits )
 
