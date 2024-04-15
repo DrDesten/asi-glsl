@@ -455,7 +455,7 @@ function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, a
         return tokens[i].type === TokenType.EOF
     }
     function calcOffset( count ) {
-        return ( count >= 0 ? calcPositiveOffset : calcNegativeOffset )( count )
+        return count >= 0 ? calcPositiveOffset( count ) : calcNegativeOffset( count )
     }
     function calcPositiveOffset( count ) {
         let offset = 0
