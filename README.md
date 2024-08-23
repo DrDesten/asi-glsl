@@ -5,7 +5,7 @@ ASI for GLSL is an extension that aims to catch and fix syntax errors automatica
 
 ## Feature: Automatic Semicolon Insertion
 Automatically adds semicolons to GLSL shader programs.  
-The AST Parser generally performs better than the RegEx based approach.
+The AST Parser is more robust than the RegEx based approach. Legacy RegEx is deprecated but will stay available until all features have been moved to the AST Parser.
 
 
 ## Extra Features: AST Parser

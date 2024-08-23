@@ -1,5 +1,10 @@
 # Change Log
 
+## 2.1.1
+- Added option `Add Inline Semicolons`
+  - Allows semicolons to be placed everywhere (previous default behaviour)
+  - When disabled, semicolons are only placed where newlines are present (new default behaviour)
+
 ## 2.1.0
 - Fixed bug where Parser would enter an infinite loop
 - Extension can now add missing colons in switch statements
