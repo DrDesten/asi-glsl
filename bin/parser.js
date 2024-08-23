@@ -1137,13 +1137,13 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
             const token = peek()
             switch ( token.type ) {
                 case TokenType.Dot: {
-                    advance()
+                    advance( TokenType.Dot )
                     const property = advance( TokenType.Identifier )
                     expr = new AccessExpr( expr, property )
                     continue
                 }
                 case TokenType.LBrack: {
-                    advance()
+                    advance( TokenType.LBrack )
                     let index = null
                     if ( peek().type !== TokenType.RBrack ) index = parseExpr()
                     advance( TokenType.RBrack )
@@ -1151,13 +1151,23 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
                     continue
                 }
                 case TokenType.LParen: {
+                    // Call needs to start on the same line
                     if ( peekStrict().type === TokenType.Newline ) break
-                    advance()
+                    advance( TokenType.LParen )
+
+                    // Call with no arguments
+                    if ( advanceIf( TokenType.RParen ) ) {
+                        expr = new CallExpression( expr, [] )
+                        continue
+                    }
+
+                    // Call with arguments
                     const args = []
-                    if ( peek().type !== TokenType.RParen ) do {
+                    while ( true ) {
                         args.push( parseAssignmentExpr() )
-                    } while ( advanceIf( TokenType.Comma ) )
-                    advance( TokenType.RParen )
+                        if ( advanceIf( TokenType.RParen ) ) break
+                        expectComma()
+                    }
                     expr = new CallExpression( expr, args )
                     continue
                 }
