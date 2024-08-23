@@ -62,54 +62,7 @@ class T {
         if ( type instanceof T ) {
             return type
         }
-        switch ( type ) {
-            case "void": return T.Void
-            case "bool": return T.Bool
-            case "int": return T.Int
-            case "uint": return T.Uint
-            case "float": return T.Float
-            case "double": return T.Double
-            case "bvec2": return T.Bvec2
-            case "bvec3": return T.Bvec3
-            case "bvec4": return T.Bvec4
-            case "ivec2": return T.Ivec2
-            case "ivec3": return T.Ivec3
-            case "ivec4": return T.Ivec4
-            case "uvec2": return T.Uvec2
-            case "uvec3": return T.Uvec3
-            case "uvec4": return T.Uvec4
-            case "vec2": return T.Vec2
-            case "vec3": return T.Vec3
-            case "vec4": return T.Vec4
-            case "dvec2": return T.Dvec2
-            case "dvec3": return T.Dvec3
-            case "dvec4": return T.Dvec4
-            case "mat2": return T.Mat2
-            case "mat2x2": return T.Mat2x2
-            case "mat2x3": return T.Mat2x3
-            case "mat2x4": return T.Mat2x4
-            case "mat3": return T.Mat3
-            case "mat3x3": return T.Mat3x3
-            case "mat3x2": return T.Mat3x2
-            case "mat3x4": return T.Mat3x4
-            case "mat4": return T.Mat4
-            case "mat4x4": return T.Mat4x4
-            case "mat4x2": return T.Mat4x2
-            case "mat4x3": return T.Mat4x3
-            case "dmat2": return T.Dmat2
-            case "dmat2x2": return T.Dmat2x2
-            case "dmat2x3": return T.Dmat2x3
-            case "dmat2x4": return T.Dmat2x4
-            case "dmat3": return T.Dmat3
-            case "dmat3x3": return T.Dmat3x3
-            case "dmat3x2": return T.Dmat3x2
-            case "dmat3x4": return T.Dmat3x4
-            case "dmat4": return T.Dmat4
-            case "dmat4x4": return T.Dmat4x4
-            case "dmat4x2": return T.Dmat4x2
-            case "dmat4x3": return T.Dmat4x3
-        }
-        return T.Error
+        return TypeMap.get( type ) ?? T.Error
     }
 
     /** @param {T} underlyingType @param {number[]} shape */
@@ -240,6 +193,56 @@ class T {
     }
 
 }
+
+const TypeList = [
+    T.Void,
+    T.Bool,
+    T.Int,
+    T.Uint,
+    T.Float,
+    T.Double,
+    T.Bvec2,
+    T.Bvec3,
+    T.Bvec4,
+    T.Ivec2,
+    T.Ivec3,
+    T.Ivec4,
+    T.Uvec2,
+    T.Uvec3,
+    T.Uvec4,
+    T.Vec2,
+    T.Vec3,
+    T.Vec4,
+    T.Dvec2,
+    T.Dvec3,
+    T.Dvec4,
+    T.Mat2,
+    T.Mat2x2,
+    T.Mat2x3,
+    T.Mat2x4,
+    T.Mat3,
+    T.Mat3x3,
+    T.Mat3x2,
+    T.Mat3x4,
+    T.Mat4,
+    T.Mat4x4,
+    T.Mat4x2,
+    T.Mat4x3,
+    T.Dmat2,
+    T.Dmat2x2,
+    T.Dmat2x3,
+    T.Dmat2x4,
+    T.Dmat3,
+    T.Dmat3x3,
+    T.Dmat3x2,
+    T.Dmat3x4,
+    T.Dmat4,
+    T.Dmat4x4,
+    T.Dmat4x2,
+    T.Dmat4x3,
+]
+
+const TypeMap = new Map( TypeList.map( t => [t.identifier(), t] ) )
 
 module.exports = {
     T,

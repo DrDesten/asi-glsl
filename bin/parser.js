@@ -429,13 +429,15 @@ class Edit {
 
 /** 
  * @param {Token[]} tokens
- * @param {boolean} addSemicolons
- * @param {boolean} addColons
- * @param {boolean} addParentheses
- * @param {boolean} addCommas
- * @param {boolean} addExplicitTypeConversions
+ * @param {Object} options
+ * @param {boolean} options.addSemicolons
+ * @param {boolean} options.addInlineSemicolons
+ * @param {boolean} options.addColons
+ * @param {boolean} options.addParentheses
+ * @param {boolean} options.addCommas
+ * @param {boolean} options.addExplicitTypeConversions
  **/
-function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, addExplicitTypeConversions } = new Proxy( {}, { get: () => true } ) ) {
+function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addParentheses, addCommas, addExplicitTypeConversions } = new Proxy( {}, { get: () => true } ) ) {
     let index = 0
 
     /** @type {Edit[]} */
@@ -534,11 +536,14 @@ function Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas, a
 
     function expectSemicolon() {
         if ( !advanceIf( TokenType.Semicolon ) ) {
-            if ( addSemicolons ) edits.push( new Edit(
-                tokens[index - 1],
-                tokens[index - 1].range.end.index,
-                ";"
-            ) ), editCounts.sem++
+            if ( addSemicolons && ( peekStrict().type === TokenType.Newline || addInlineSemicolons ) ) {
+                edits.push( new Edit(
+                    tokens[index - 1],
+                    tokens[index - 1].range.end.index,
+                    ";"
+                ) )
+                editCounts.sem++
+            }
         } else {
             while ( advanceIf( TokenType.Semicolon ) ) {}
         }

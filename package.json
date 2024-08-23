@@ -40,6 +40,11 @@
 					"default": true,
 					"markdownDescription": "Extension adds semicolons when formatting."
 				},
+				"asi-glsl.addInlineSemicolons": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "Extension adds semicolons even when no linebreak is present."
+				},
 				"asi-glsl.addColons": {
 					"type": "boolean",
 					"default": true,

@@ -21,6 +21,7 @@ function activate( context ) {
             const edits = []
             const useLegacyRegex = vscode.workspace.getConfiguration( "asi-glsl" ).get( "useLegacyRegex" )
             const addSemicolons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addSemicolons" )
+            const addInlineSemicolons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addInlineSemicolons" )
             const addColons = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addColons" )
             const addParentheses = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addParentheses" )
             const addExplicitTypeConversions = vscode.workspace.getConfiguration( "asi-glsl" ).get( "addExplicitTypeConversions" )
@@ -145,7 +146,7 @@ function activate( context ) {
                     try {
 
                         const tokens = GLSLLexer().lex( documentText )
-                        const { edits: parserEdits, counts } = Parse( tokens, { addSemicolons, addColons, addParentheses, addCommas: false, addExplicitTypeConversions } )
+                        const { edits: parserEdits, counts } = Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addParentheses, addCommas: false, addExplicitTypeConversions } )
                         console.log( parserEdits )
 
                         const names = {
