@@ -1,5 +1,8 @@
 # Change Log
 
+## 2.1.2
+- Fixed wrong tokenisation of single-line comments
+
 ## 2.1.1
 - Added option `Add Inline Semicolons`
   - Allows semicolons to be placed everywhere (previous default behaviour)
