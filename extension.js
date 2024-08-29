@@ -13,7 +13,7 @@ const { Parse } = require( './bin/parser.js' )
  */
 function activate( context ) {
 
-    console.log( '"asi-glsl" is online' )
+    console.info( '"asi-glsl" is online' )
 
     const formatter = vscode.languages.registerDocumentFormattingEditProvider( "glsl", {
         provideDocumentFormattingEdits( document ) {

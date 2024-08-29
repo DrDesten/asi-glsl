@@ -26,7 +26,6 @@
 	"main": "./extension.js",
 	"type": "commonjs",
 	"contributes": {
-		"commands": [],
 		"configuration": {
 			"title": "ASI for GLSL",
 			"properties": {

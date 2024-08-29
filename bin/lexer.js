@@ -47,9 +47,9 @@ const TokenType = Object.freeze( {
 
 const Tokens = [
     new TokenMatcher( TokenType.Preprocessor, /#(\\\r?\n|.)*(\r?\n)?/, { ignore: true } ),
-    new TokenMatcher( TokenType.Comment, /\/\/.*(\r?\n)?|\/\*[^]*?\*\//, { ignore: true } ),
+    new TokenMatcher( TokenType.Comment, /\/\/.*(?=\r?\n|$)|\/\*[^]*?\*\//, { ignore: true } ),
     new TokenMatcher( TokenType.Whitespace, /[^\S\n]+/, { ignore: true } ),
-    new TokenMatcher( TokenType.Newline, /\r?\n/, { merge: true } ),
+    new TokenMatcher( TokenType.Newline, /(\r?\n)+/, { merge: true } ),
 
     new TokenMatcher( TokenType.Precision, /precision/ ),
     new TokenMatcher( TokenType.Struct, /struct/ ),
