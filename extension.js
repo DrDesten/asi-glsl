@@ -35,8 +35,6 @@ function deactivate() {}
 
 /** @param {vscode.TextDocument} document @returns {vscode.TextEdit[]} */
 function formatter( document ) {
-    const edits = []
-
     const config = vscode.workspace.getConfiguration( "asi-glsl" )
     const useLegacyRegex = config.get( "useLegacyRegex" )
     const addSemicolons = config.get( "addSemicolons" )
@@ -49,11 +47,10 @@ function formatter( document ) {
     const lazyConstructors = config.get( "lazyConstructors" )
 
     if ( useLegacyRegex ) {
-        console.log( "invoke (legacy)" )
         return legacyRegex( document )
     }
-    console.log( "invoke" )
 
+    const edits = []
     const documentText = document.getText()
 
     if ( addSemicolons || addColons || addParentheses ) {
