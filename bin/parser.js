@@ -9,8 +9,6 @@ class Decl extends Node { constructor() { super() } }
 class Stmt extends Decl { constructor() { super() } }
 class Expr extends Node { constructor() { super() } }
 
-class ParserError extends Node { constructor() { super() } }
-
 // Declarations
 
 class StructDecl extends Decl {
@@ -80,16 +78,16 @@ class FunctionArg extends Node {
 
 // Statements
 
-class ExpressionStmt extends Stmt {
-    constructor( expr ) {
-        super()
-        this.expr = expr
-    }
-}
 class BlockStmt extends Stmt {
     constructor( stmts ) {
         super()
         this.stmts = stmts
+    }
+}
+class ExpressionStmt extends Stmt {
+    constructor( expr ) {
+        super()
+        this.expr = expr
     }
 }
 class IfStmt extends Stmt {
@@ -428,7 +426,7 @@ class Edit {
 }
 
 /** 
- * @param {Token[]} tokens
+ * @param {Token<string>[] & { text: string }} tokens
  * @param {Object} options
  * @param {boolean} options.addSemicolons
  * @param {boolean} options.addInlineSemicolons
@@ -437,19 +435,41 @@ class Edit {
  * @param {boolean} options.addCommas
  * @param {boolean} options.addExplicitTypeConversions
  **/
-function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addParentheses, addCommas, addExplicitTypeConversions } = new Proxy( {}, { get: () => true } ) ) {
+function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
     let index = 0
+
+    const {
+        addSemicolons,
+        addInlineSemicolons,
+        addColons,
+        addParentheses,
+        addCommas,
+        addExplicitTypeConversions,
+    } = options;
+
+    const Counts = {
+        sem: 0,
+        col: 0,
+        par: 0,
+        com: 0,
+        conv: 0,
+    }
+    /** @type {Map<string,number>} */
+    const OtherCounts = new Map
+    OtherCounts.inc = function( key ) { this.set( key, ( this.get( key ) ?? 0 ) + 1 ) }
 
     /** @type {Edit[]} */
     const edits = []
-    const editCounts = { sem: 0, col: 0, par: 0, com: 0, conv: 0 }
     /** @type {Node[]} */
     const ast = parse()
     return {
         ast: ast,
         edits: edits,
-        counts: editCounts,
+        counts: Counts,
+        counts2: OtherCounts
     }
+
+    function warn( ...args ) { console.warn( ...args) }
 
     function eof() {
         let i = index
@@ -508,10 +528,16 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
     function advance( ...conditions ) {
         const token = peek()
         if ( !checkCondition( token, ...conditions ) ) {
-            let message = `\nExpected Token of type(s) ${conditions.join( " and " )}`
-                        + `\nGot Token of type ${token.type.toString()} and text of "${token.text}"`
-                        + `\nAt: l:${token.position.line} c: ${token.position.column}`
-            throw new Error( message + "\n" )
+            let { line, column } = token.position
+            let message = `Expected Token of type(s) ${conditions.join( " and " )}\n`
+                        + `Got Token of type ${token.type.toString()} and text of "${token.text}"\n`
+                        + `At: l:${line} c: ${column}\n\n`
+
+            let lines = tokens.text.split(/\r?\n/g)
+            if (lines[line - 2] !== undefined) message += ` | ${lines[line - 2]}\n`
+            if (lines[line - 1] !== undefined) message += ` > ${lines[line - 1]}\n`
+            if (lines[line + 0] !== undefined) message += ` | ${lines[line + 0]}\n`
+            throw new Error( message )
         }
         index += calcOffset( 0 )
         index++
@@ -525,6 +551,19 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
         return null
     }
 
+    function expect( text ) {
+        if ( peek().text === text ) {
+            return advance()
+        } else {
+            OtherCounts.inc( text )
+            edits.push( new Edit(
+                tokens[index - 1],
+                tokens[index - 1].range.end.index,
+                text
+            ) )
+            return null
+        }
+    }
     function expectSemicolon() {
         if ( !advanceIf( TokenType.Semicolon ) ) {
             if ( addSemicolons && ( peekStrict().type === TokenType.Newline || addInlineSemicolons ) ) {
@@ -533,7 +572,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
                     tokens[index - 1].range.end.index,
                     ";"
                 ) )
-                editCounts.sem++
+                Counts.sem++
             }
         } else {
             while ( advanceIf( TokenType.Semicolon ) ) {}
@@ -545,7 +584,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
                 tokens[index - 1],
                 tokens[index - 1].range.end.index,
                 ","
-            ) ), editCounts.com++
+            ) ), Counts.com++
         }
     }
     function expectColon() {
@@ -554,25 +593,25 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
                 tokens[index - 1],
                 tokens[index - 1].range.end.index,
                 ":"
-            ) ), editCounts.col++
+            ) ), Counts.col++
         }
     }
     function expectLParen() {
-        if ( !advanceIf( TokenType.LParen ) ) {
+        if ( !advanceIf( TokenType.ParenOpen ) ) {
             if ( addParentheses ) edits.push( new Edit(
                 tokens[index - 1],
                 tokens[index].range.start.index,
                 "("
-            ) ), editCounts.par++
+            ) ), Counts.par++
         }
     }
-    function expectRParen() {
-        if ( !advanceIf( TokenType.RParen ) ) {
+    function expectPClose() {
+        if ( !advanceIf( TokenType.ParenClose ) ) {
             if ( addParentheses ) edits.push( new Edit(
                 tokens[index - 1],
                 tokens[index - 1].range.end.index,
                 ")"
-            ) ), editCounts.par++
+            ) ), Counts.par++
         }
     }
 
@@ -602,7 +641,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
             }
             case TokenType.Identifier: {
                 if ( peek( 1 )?.type === TokenType.Identifier ) {
-                    if ( peek( 2 )?.type === TokenType.LParen ) {
+                    if ( peek( 2 )?.type === TokenType.ParenOpen ) {
                         return parseFunctionDecl()
                     }
                     return parseVarDecl()
@@ -629,12 +668,12 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
     function parseType() {
         const name = advance( TokenType.Identifier )
         const array = []
-        while ( advanceIf( TokenType.LBrack ) ) {
-            if ( advanceIf( TokenType.RBrack ) ) {
+        while ( advanceIf( TokenType.BrackOpen ) ) {
+            if ( advanceIf( TokenType.BrackClose ) ) {
                 array.push( null )
             } else {
                 array.push( parseExpr() )
-                advance( TokenType.RBrack )
+                advance( TokenType.BrackClose )
             }
         }
         return { name, array }
@@ -643,12 +682,12 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
     function parseDeclIdentifier() {
         const name = advance( TokenType.Identifier )
         const array = []
-        while ( advanceIf( TokenType.LBrack ) ) {
-            if ( advanceIf( TokenType.RBrack ) ) {
+        while ( advanceIf( TokenType.BrackOpen ) ) {
+            if ( advanceIf( TokenType.BrackClose ) ) {
                 array.push( null )
             } else {
                 array.push( parseExpr() )
-                advance( TokenType.RBrack )
+                advance( TokenType.BrackClose )
             }
         }
         return { name, array }
@@ -660,7 +699,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
         if ( peek().type === TokenType.Struct ) {
             return parseStructDecl()
         }
-        if ( peek( 1 ).type === TokenType.LBrace ) {
+        if ( peek( 1 ).type === TokenType.BraceOpen ) {
             return parseInterfaceDecl()
         }
         return parseVarDecl()
@@ -669,9 +708,9 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
     function parseStructDecl() {
         advance( TokenType.Struct )
         const name = advanceIf( TokenType.Identifier )
-        advance( TokenType.LBrace )
+        advance( TokenType.BraceOpen )
         const members = []
-        while ( !advanceIf( TokenType.RBrace ) ) {
+        while ( !advanceIf( TokenType.BraceClose ) ) {
             const type = parseType().name
             const declarators = [parseDeclIdentifier().name]
             while ( advanceIf( TokenType.Comma ) )
@@ -691,10 +730,10 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
 
     function parseInterfaceDecl() {
         const name = advance( TokenType.Identifier )
-        advance( TokenType.LBrace )
+        advance( TokenType.BraceOpen )
 
         const members = []
-        while ( !advanceIf( TokenType.RBrace ) ) {
+        while ( !advanceIf( TokenType.BraceClose ) ) {
             parseQualifiers()
             const { name: type } = parseType()
             const declarators = [parseDeclIdentifier().name]
@@ -735,7 +774,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
                         const end = peek( -1 )
                         edits.push( new Edit( start, start.range.start.index, `${expectedType.identifier()}(` ) )
                         edits.push( new Edit( end, end.range.end.index, `)` ) )
-                        editCounts.conv++
+                        Counts.conv++
                     }
                 }
             }
@@ -749,8 +788,8 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
 
     function parseLayout() {
         advance( TokenType.Layout )
-        advance( TokenType.LParen )
-        if ( peek().type !== TokenType.RParen ) {
+        advance( TokenType.ParenOpen )
+        if ( peek().type !== TokenType.ParenClose ) {
             do {
                 advance( TokenType.Identifier )
                 if ( peek().text === "=" ) {
@@ -759,7 +798,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
                 }
             } while ( advanceIf( TokenType.Comma ) )
         }
-        advance( TokenType.RParen )
+        advance( TokenType.ParenClose )
 
         parseQualifiers()
         if ( advanceIf( TokenType.Identifier ) /* type */ ) {
@@ -772,17 +811,17 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
     function parseFunctionDecl() {
         const returnType = advance( TokenType.Identifier ) // Return Type
         const ident = advance( TokenType.Identifier ) // Function Name
-        advance( TokenType.LParen ) // Opening Parenthesis
+        advance( TokenType.ParenOpen ) // Opening Parenthesis
 
         const args = []
-        if ( !advanceIf( TokenType.RParen ) ) {
+        if ( !advanceIf( TokenType.ParenClose ) ) {
             do {
                 parseQualifiers()
                 const { name: type } = parseType() // Argument Type
                 const { name: ident } = parseDeclIdentifier() // Argument Name
                 args.push( new FunctionArg( type, ident ) )
             } while ( advanceIf( TokenType.Comma ) )
-            advance( TokenType.RParen ) // Closing Parenthesis
+            advance( TokenType.ParenClose ) // Closing Parenthesis
         }
 
         const body = parseBlock()
@@ -794,7 +833,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
     function parseStmt() {
         switch ( peek().type ) {
             case TokenType.EOF: return
-            case TokenType.LBrace: return parseBlock()
+            case TokenType.BraceOpen: return parseBlock()
             case TokenType.If: return parseIf()
             case TokenType.Switch: return parseSwitch()
             case TokenType.For: return parseFor()
@@ -805,7 +844,12 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
             case TokenType.Return: return parseReturn()
             case TokenType.Discard: return parseDiscard()
             default: {
-                const stmt = new ExpressionStmt( parseExpr() )
+                const expr = parseExpr()
+                if (!expr) {
+                    const token = advance()
+                    warn("Skipping Token", token)
+                }
+                const stmt = new ExpressionStmt( expr )
                 expectSemicolon()
                 return stmt
             }
@@ -813,14 +857,14 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
     }
 
     function parseBlock() {
-        advance( TokenType.LBrace )
+        advance( TokenType.BraceOpen )
         const stmts = []
-        while ( peek().type !== TokenType.RBrace ) {
+        while ( peek().type !== TokenType.BraceClose ) {
             const decl = parseDecl()
             if ( decl === undefined ) break
             stmts.push( decl )
         }
-        advance( TokenType.RBrace )
+        advance( TokenType.BraceClose )
         return new BlockStmt( stmts )
     }
 
@@ -828,7 +872,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
         advance( TokenType.If )
         expectLParen()
         const condition = parseExpr()
-        expectRParen()
+        expectPClose()
 
         const ifBlock = parseStmt()
         let elseBlock = null
@@ -843,17 +887,17 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
         advance( TokenType.Switch )
         expectLParen()
         const switchCondition = parseExpr()
-        expectRParen()
+        expectPClose()
 
-        advance( TokenType.LBrace )
+        advance( TokenType.BraceOpen )
         const cases = []
-        while ( !advanceIf( TokenType.RBrace ) ) {
+        while ( !advanceIf( TokenType.BraceClose ) ) {
             if ( advanceIf( TokenType.Case ) ) {
                 const caseCondition = parseExpr()
                 expectColon()
 
                 const body = []
-                while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.RBrace ) {
+                while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.BraceClose ) {
                     body.push( parseStmt() )
                 }
 
@@ -865,7 +909,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
             expectColon()
 
             const body = []
-            while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.RBrace ) {
+            while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.BraceClose ) {
                 body.push( parseStmt() )
             }
 
@@ -895,9 +939,9 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
 
         // TODO: handle missing loop expr better
         let loopExpr = null
-        if ( !advanceIf( TokenType.RParen ) ) {
+        if ( !advanceIf( TokenType.ParenClose ) ) {
             loopExpr = parseExpr()
-            expectRParen()
+            expectPClose()
         }
 
         const body = parseStmt()
@@ -908,7 +952,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
         advance( TokenType.While )
         expectLParen()
         const condition = parseExpr()
-        expectRParen()
+        expectPClose()
         const body = parseStmt()
         return new WhileStmt( condition, body )
     }
@@ -919,7 +963,7 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
         advance( TokenType.While )
         expectLParen()
         const condition = parseExpr()
-        expectRParen()
+        expectPClose()
         expectSemicolon()
         return new DoWhileStmt( condition, body )
     }
@@ -952,32 +996,33 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
     // Expressions
 
     function parseInitializerExpr() {
-        if ( peek().type === TokenType.LBrace ) {
+        if ( peek().type === TokenType.BraceOpen ) {
             return parseInitializerList()
         }
         return parseAssignmentExpr()
     }
 
     function parseInitializerList() {
-        advance( TokenType.LBrace )
+        advance( TokenType.BraceOpen )
         const exprs = []
-        while ( peek().type !== TokenType.RBrace ) {
+        while ( peek().type !== TokenType.BraceClose ) {
             exprs.push( parseInitializerExpr() )
-            if ( peek().type !== TokenType.RBrace ) {
+            if ( peek().type !== TokenType.BraceClose ) {
                 advance( TokenType.Comma )
             }
         }
         advanceIf( TokenType.Comma )
-        advance( TokenType.RBrace )
+        advance( TokenType.BraceClose )
         return new InitializerListExpr( exprs )
     }
 
-    /** @returns {Expr} */
+    /** @returns {Expr?} */
     function parseExpr() {
         const exprs = []
         do {
             exprs.push( parseAssignmentExpr() )
         } while ( advanceIf( TokenType.Comma ) )
+        //if (exprs.every(x=>x===null)) throw new Error()
         return exprs.length === 1 ? exprs[0] : new SequenceExpr( exprs )
     }
 
@@ -1135,33 +1180,34 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
                     expr = new AccessExpr( expr, property )
                     continue
                 }
-                case TokenType.LBrack: {
-                    advance( TokenType.LBrack )
-                    let index = null
-                    if ( peek().type !== TokenType.RBrack ) index = parseExpr()
-                    advance( TokenType.RBrack )
-                    expr = new IndexExpr( expr, index )
+                case TokenType.BrackOpen: {
+                    advance( TokenType.BrackOpen )
+                    const indexexpr = parseExpr()
+                    expect( "]" )
+                    expr = new IndexExpr( expr, indexexpr )
                     continue
                 }
-                case TokenType.LParen: {
+                case TokenType.ParenOpen: {
                     // Call needs to start on the same line
                     if ( peekStrict().type === TokenType.Newline ) break
-                    advance( TokenType.LParen )
+                    advance( TokenType.ParenOpen )
 
                     // Call with no arguments
-                    if ( advanceIf( TokenType.RParen ) ) {
+                    if ( advanceIf( TokenType.ParenClose ) ) {
                         expr = new CallExpression( expr, [] )
                         continue
                     }
 
                     // Call with arguments
-                    const args = []
+                    const callargs = []
                     while ( true ) {
-                        args.push( parseAssignmentExpr() )
-                        if ( advanceIf( TokenType.RParen ) ) break
+                        const argexpr = parseAssignmentExpr()
+                        if ( !argexpr ) { expectPClose(); break }
+                        callargs.push( argexpr )
+                        if ( advanceIf( TokenType.ParenClose ) ) break
                         expectComma()
                     }
-                    expr = new CallExpression( expr, args )
+                    expr = new CallExpression( expr, callargs )
                     continue
                 }
                 case TokenType.Operator: {
@@ -1178,12 +1224,15 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
     }
 
     function parseLiteralExpr() {
-        if ( advanceIf( TokenType.LParen ) ) {
+        if ( advanceIf( TokenType.ParenOpen ) ) {
             const expr = parseExpr()
-            advance( TokenType.RParen )
+            advance( TokenType.ParenClose )
             return expr
         }
-        const token = advance( TokenType.Literal, TokenType.Identifier )
+
+        const token = advanceIf( TokenType.Literal, TokenType.Identifier )
+        if (!token) return null
+
         return token.type === TokenType.Literal
             ? new LiteralExpr( token )
             : new IdentifierExpr( token )

@@ -56,11 +56,20 @@ function formatter( document ) {
 
     if ( addSemicolons || addColons || addParentheses ) {
 
+        const options = { 
+            addSemicolons,
+            addInlineSemicolons,
+            addColons,
+            addParentheses,
+            addCommas: false,
+            addExplicitTypeConversions 
+        }
+
         try {
 
             const lexer = GLSLLexer()
             const tokens = lexer.lex( documentText )
-            const { edits: parserEdits, counts } = Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addParentheses, addCommas: false, addExplicitTypeConversions } )
+            const { edits: parserEdits, counts } = Parse( tokens, documentText, options )
             console.log( parserEdits )
 
             const names = {
