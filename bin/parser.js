@@ -1,4 +1,4 @@
-const { GLSLLexer, TokenType } = require( "./lexer.js" )
+const { TokenType } = require( "./lexer.js" )
 const { Token } = require( "../lib/lexer.js" )
 const { T } = require( "./glsltype.js" )
 
@@ -499,36 +499,27 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
     function peekStrict( offset = 0 ) {
         return tokens[index + offset]
     }
-    /** @param {Token} token @param {...(Symbol|string)} conditions */
-    function checkConditions( token, ...conditions ) {
+    /** @param {Token} token @param {...string} conditions */
+    function checkCondition( token, ...conditions ) {
         if ( conditions.length === 0 ) return true
-        const symbols = conditions.filter( c => typeof c === "symbol" )
-        const strings = conditions.filter( c => typeof c === "string" )
-        return ( !symbols.length || symbols.includes( token.type ) ) && ( !strings.length || strings.includes( token.text ) )
+        return conditions.includes( token.type )
     }
-    /** @param {...(Symbol|string)} conditions @returns {Token} */
+    /** @param {...string} conditions @returns {Token} */
     function advance( ...conditions ) {
         const token = peek()
-        if ( !checkConditions( token, ...conditions ) ) {
-            let c = [
-                conditions.filter( c => typeof c === "symbol" ).map( s => s.toString() ).join( " or " ),
-                conditions.filter( c => typeof c === "string" ).map( s => `"${s}"` ).join( " or " )
-            ]
-            if ( c[0] ) c[0] = "of type " + c[0]
-            if ( c[1] ) c[1] = "with text of " + c[1]
-            c = c.filter( c => c )
-
-            let message = `\nExpected Token ${c.join( " and " )}\nGot Token of type ${token.type.toString()} and text of "${token.text}"`
-            message += `\nAt: l:${token.position.line} c: ${token.position.column}`
+        if ( !checkCondition( token, ...conditions ) ) {
+            let message = `\nExpected Token of type(s) ${conditions.join( " and " )}`
+                        + `\nGot Token of type ${token.type.toString()} and text of "${token.text}"`
+                        + `\nAt: l:${token.position.line} c: ${token.position.column}`
             throw new Error( message + "\n" )
         }
         index += calcOffset( 0 )
         index++
         return token
     }
-    /** @param {...(Symbol|string)} conditions @returns {Token?} */
+    /** @param {...string} conditions @returns {Token?} */
     function advanceIf( ...conditions ) {
-        if ( checkConditions( peek(), ...conditions ) ) {
+        if ( checkCondition( peek(), ...conditions ) ) {
             return advance()
         }
         return null
@@ -762,8 +753,10 @@ function Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addPare
         if ( peek().type !== TokenType.RParen ) {
             do {
                 advance( TokenType.Identifier )
-                if ( advanceIf( "=" ) )
+                if ( peek().text === "=" ) {
+                    advance()
                     parseAssignmentExpr()
+                }
             } while ( advanceIf( TokenType.Comma ) )
         }
         advance( TokenType.RParen )

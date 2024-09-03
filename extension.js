@@ -58,7 +58,8 @@ function formatter( document ) {
 
         try {
 
-            const tokens = GLSLLexer().lex( documentText )
+            const lexer = GLSLLexer()
+            const tokens = lexer.lex( documentText )
             const { edits: parserEdits, counts } = Parse( tokens, { addSemicolons, addInlineSemicolons, addColons, addParentheses, addCommas: false, addExplicitTypeConversions } )
             console.log( parserEdits )
 
