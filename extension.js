@@ -69,7 +69,7 @@ function formatter( document ) {
 
             const lexer = GLSLLexer()
             const tokens = lexer.lex( documentText )
-            const { edits: parserEdits, counts } = Parse( tokens, documentText, options )
+            const { edits: parserEdits, counts } = Parse( tokens, options )
             console.log( parserEdits )
 
             const names = {
