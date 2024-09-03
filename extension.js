@@ -35,10 +35,6 @@ function deactivate() {}
 
 /** @param {vscode.TextDocument} document @returns {vscode.TextEdit[]} */
 function formatter( document ) {
-    if ( useLegacyRegex ) {
-        return legacyRegex(document)
-    }
-
     const edits = []
 
     const config = vscode.workspace.getConfiguration( "asi-glsl" )
@@ -52,17 +48,23 @@ function formatter( document ) {
     const lazyFor = config.get( "lazyFor" )
     const lazyConstructors = config.get( "lazyConstructors" )
 
+    if ( useLegacyRegex ) {
+        console.log( "invoke (legacy)" )
+        return legacyRegex( document )
+    }
+    console.log( "invoke" )
+
     const documentText = document.getText()
 
     if ( addSemicolons || addColons || addParentheses ) {
 
-        const options = { 
+        const options = {
             addSemicolons,
             addInlineSemicolons,
             addColons,
             addParentheses,
             addCommas: false,
-            addExplicitTypeConversions 
+            addExplicitTypeConversions
         }
 
         try {
@@ -82,12 +84,12 @@ function formatter( document ) {
 
             if ( Math.max( ...counts.values() ) > 0 ) {
                 const entries = [...counts.entries()]
-                const results = entries.filter(([k]) => k in names)
+                const results = entries.filter( ( [k] ) => k in names )
                     .map( ( [key, count] ) => `${count} ${names[key][+( count !== 1 )]}` )
-                const other = entries.filter(([k]) => !(k in names))
-                    .reduce((sum, [_,x]) => sum + x, 0)
-                if (other) results.push(`${other} changes`)
-                const message = "Added " 
+                const other = entries.filter( ( [k] ) => !( k in names ) )
+                    .reduce( ( sum, [_, x] ) => sum + x, 0 )
+                if ( other ) results.push( `${other} changes` )
+                const message = "Added "
                     + results.length === 1
                     ? results[0]
                     : results.slice( 0, -1 ).join( ", " ) + " and " + results.at( -1 )
