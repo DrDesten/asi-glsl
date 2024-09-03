@@ -13,7 +13,8 @@ const paths = ["minimum.glsl", "mintest.glsl", "test.glsl", "maximum.glsl"]
 function checkMax() {
     const content = fs.readFileSync(root(paths.at(-1)), "utf8")
     const tokens = GLSLLexer().lex(content)
-    const { ast, edits, counts, counts2 } = Parse( tokens )
+    const { ast, edits, counts } = Parse( tokens )
+    console.info( "Counts:", counts, "Edits:", edits )
 }
 
 const LOG = Object.assign( function log( channel, transform ) {
@@ -50,11 +51,10 @@ lF(content)
 const tokens = GLSLLexer().lex(content)
 lT(tokens)
 
-const { ast, edits, counts, counts2 } = Parse( tokens )
+const { ast, edits, counts } = Parse( tokens )
 lAst(ast)
 lP(edits)
 lP(counts)
-lP(counts2)
 
 
 console.info("Running maximum check")

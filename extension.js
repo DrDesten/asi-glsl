@@ -73,19 +73,24 @@ function formatter( document ) {
             console.log( parserEdits )
 
             const names = {
-                sem: ["Semicolon", "Semicolons"],
-                col: ["Colon", "Colons"],
-                par: ["Parenthesis", "Parentheses"],
-                com: ["Comma", "Commas"],
-                conv: ["Explicit Type Conversion", "Explicit Type Conversions"]
+                ";": ["Semicolon", "Semicolons"],
+                type: ["Explicit Type Conversion", "Explicit Type Conversions"]
             }
             for ( const edit of parserEdits ) {
                 edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
             }
 
-            if ( Math.max( ...Object.values( counts ) ) !== 0 ) {
-                const entries = Object.entries( counts ).filter( ( [, n] ) => n ).map( ( [key, count] ) => `${count} ${names[key][+( count !== 1 )]}` )
-                const message = "Added " + ( entries.length === 1 ? entries[0] : entries.slice( 0, -1 ).join( ", " ) + " and " + entries.at( -1 ) )
+            if ( Math.max( ...counts.values() ) > 0 ) {
+                const entries = [...counts.entries()]
+                const results = entries.filter(([k]) => k in names)
+                    .map( ( [key, count] ) => `${count} ${names[key][+( count !== 1 )]}` )
+                const other = entries.filter(([k]) => !(k in names))
+                    .reduce((sum, [_,x]) => sum + x, 0)
+                if (other) results.push(`${other} changes`)
+                const message = "Added " 
+                    + results.length === 1
+                    ? results[0]
+                    : results.slice( 0, -1 ).join( ", " ) + " and " + results.at( -1 )
                 vscode.window.showInformationMessage( message )
             }
 

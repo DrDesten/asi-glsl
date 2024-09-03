@@ -426,6 +426,9 @@ class Edit {
 }
 
 /** 
+ * Parses a Token Stream produced by Lexer
+ * REQUIRES Newlines to be merged
+ * 
  * @param {Token<string>[] & { text: string }} tokens
  * @param {Object} options
  * @param {boolean} options.addSemicolons
@@ -447,16 +450,17 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         addExplicitTypeConversions,
     } = options;
 
-    const Counts = {
-        sem: 0,
-        col: 0,
-        par: 0,
-        com: 0,
-        conv: 0,
+    /** @type {{[key: string]: () => boolean}} */
+    const expectFilter = {
+        ":"() { return addColons },
+        "("() { return addParentheses },
+        ")"() { return addParentheses },
+        ","() { return addCommas },
     }
+
     /** @type {Map<string,number>} */
-    const OtherCounts = new Map
-    OtherCounts.inc = function( key ) { this.set( key, ( this.get( key ) ?? 0 ) + 1 ) }
+    const Counts = new Map
+    Counts.inc = function( key ) { this.set( key, ( this.get( key ) ?? 0 ) + 1 ) }
 
     /** @type {Edit[]} */
     const edits = []
@@ -465,8 +469,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
     return {
         ast: ast,
         edits: edits,
-        counts: Counts,
-        counts2: OtherCounts
+        counts: Counts
     }
 
     function warn( ...args ) { console.warn( ...args) }
@@ -482,12 +485,9 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
     function calcPositiveOffset( count ) {
         let offset = 0
         while ( !eof() ) {
-            // Skip all newlines
-            if ( tokens[index + offset].type === TokenType.Newline ) {
-                offset++
-                continue
-            }
-            // Next token isn't a newline, check `count`
+            // Skip newline
+            if ( tokens[index + offset].type === TokenType.Newline ) offset++
+            // Next token can't be a newline, check `count`
             if ( count ) count--, offset++
             else break
         }
@@ -495,18 +495,11 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
     }
     function calcNegativeOffset( count ) {
         let offset = 0
-        if ( tokens[index].type === TokenType.Newline ) {
-            count++, offset--
-            while ( tokens[index + offset].type === TokenType.Newline )
-                offset--
-        }
+        if ( tokens[index].type === TokenType.Newline ) count++, offset--
         while ( index + offset >= 0 ) {
-            // Skip all newlines
-            if ( tokens[index + offset].type === TokenType.Newline ) {
-                offset--
-                continue
-            }
-            // Next token isn't a newline, check `count`
+            // Skip newline
+            if ( tokens[index + offset].type === TokenType.Newline ) offset--
+            // Previous token can't be a newline, check `count`
             if ( count ) count++, offset--
             else break
         }
@@ -554,64 +547,29 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
     function expect( text ) {
         if ( peek().text === text ) {
             return advance()
-        } else {
-            OtherCounts.inc( text )
+        }
+        if ( expectFilter[text]?.() ?? true ) {
+            Counts.inc( text )
             edits.push( new Edit(
                 tokens[index - 1],
                 tokens[index - 1].range.end.index,
                 text
             ) )
-            return null
         }
+        return null
     }
     function expectSemicolon() {
-        if ( !advanceIf( TokenType.Semicolon ) ) {
-            if ( addSemicolons && ( peekStrict().type === TokenType.Newline || addInlineSemicolons ) ) {
-                edits.push( new Edit(
-                    tokens[index - 1],
-                    tokens[index - 1].range.end.index,
-                    ";"
-                ) )
-                Counts.sem++
-            }
-        } else {
+        if ( advanceIf(TokenType.Semicolon) ) {
             while ( advanceIf( TokenType.Semicolon ) ) {}
+            return
         }
-    }
-    function expectComma() {
-        if ( !advanceIf( TokenType.Comma ) ) {
-            if ( addCommas ) edits.push( new Edit(
+        if ( addSemicolons && ( peekStrict().type === TokenType.Newline || addInlineSemicolons ) ) {
+            edits.push( new Edit(
                 tokens[index - 1],
                 tokens[index - 1].range.end.index,
-                ","
-            ) ), Counts.com++
-        }
-    }
-    function expectColon() {
-        if ( !advanceIf( TokenType.Colon ) ) {
-            if ( addColons ) edits.push( new Edit(
-                tokens[index - 1],
-                tokens[index - 1].range.end.index,
-                ":"
-            ) ), Counts.col++
-        }
-    }
-    function expectLParen() {
-        if ( !advanceIf( TokenType.ParenOpen ) ) {
-            if ( addParentheses ) edits.push( new Edit(
-                tokens[index - 1],
-                tokens[index].range.start.index,
-                "("
-            ) ), Counts.par++
-        }
-    }
-    function expectPClose() {
-        if ( !advanceIf( TokenType.ParenClose ) ) {
-            if ( addParentheses ) edits.push( new Edit(
-                tokens[index - 1],
-                tokens[index - 1].range.end.index,
-                ")"
-            ) ), Counts.par++
+                ";"
+            ) )
+            Counts.inc(";")
         }
     }
 
@@ -774,7 +732,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
                         const end = peek( -1 )
                         edits.push( new Edit( start, start.range.start.index, `${expectedType.identifier()}(` ) )
                         edits.push( new Edit( end, end.range.end.index, `)` ) )
-                        Counts.conv++
+                        Counts.inc("type")
                     }
                 }
             }
@@ -870,9 +828,9 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
     function parseIf() {
         advance( TokenType.If )
-        expectLParen()
+        expect( "(" )
         const condition = parseExpr()
-        expectPClose()
+        expect( ")" )
 
         const ifBlock = parseStmt()
         let elseBlock = null
@@ -885,16 +843,16 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
     function parseSwitch() {
         advance( TokenType.Switch )
-        expectLParen()
+        expect( "(" )
         const switchCondition = parseExpr()
-        expectPClose()
+        expect( ")" )
 
         advance( TokenType.BraceOpen )
         const cases = []
         while ( !advanceIf( TokenType.BraceClose ) ) {
             if ( advanceIf( TokenType.Case ) ) {
                 const caseCondition = parseExpr()
-                expectColon()
+                expect( ":" )
 
                 const body = []
                 while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.BraceClose ) {
@@ -906,7 +864,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
             }
 
             advance( TokenType.Default )
-            expectColon()
+            expect( ":" )
 
             const body = []
             while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.BraceClose ) {
@@ -920,7 +878,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
     function parseFor() {
         advance( TokenType.For )
-        expectLParen()
+        expect( "(" )
 
         let initExpr = null
         if ( peek().type !== TokenType.Semicolon ) {
@@ -941,7 +899,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         let loopExpr = null
         if ( !advanceIf( TokenType.ParenClose ) ) {
             loopExpr = parseExpr()
-            expectPClose()
+            expect( ")" )
         }
 
         const body = parseStmt()
@@ -950,9 +908,9 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
     function parseWhile() {
         advance( TokenType.While )
-        expectLParen()
+        expect( "(" )
         const condition = parseExpr()
-        expectPClose()
+        expect( ")" )
         const body = parseStmt()
         return new WhileStmt( condition, body )
     }
@@ -961,9 +919,9 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         advance( TokenType.Do )
         const body = parseStmt()
         advance( TokenType.While )
-        expectLParen()
+        expect( "(" )
         const condition = parseExpr()
-        expectPClose()
+        expect( ")" )
         expectSemicolon()
         return new DoWhileStmt( condition, body )
     }
@@ -1202,10 +1160,10 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
                     const callargs = []
                     while ( true ) {
                         const argexpr = parseAssignmentExpr()
-                        if ( !argexpr ) { expectPClose(); break }
+                        if ( !argexpr ) { expect( ")" ); break }
                         callargs.push( argexpr )
                         if ( advanceIf( TokenType.ParenClose ) ) break
-                        expectComma()
+                        expect( "," )
                     }
                     expr = new CallExpression( expr, callargs )
                     continue

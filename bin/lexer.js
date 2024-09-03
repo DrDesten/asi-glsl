@@ -76,7 +76,7 @@ function GLSLLexer( version = Infinity, props = {} ) {
         new TokenMatcher( TokenType.Return, /\breturn\b/ ),
         new TokenMatcher( TokenType.Discard, /\bdiscard\b/ ),
 
-        new TokenMatcher( TokenType.Literal, /(\d+\.\d+|\d+\.|\.\d+)([eE][+-]?\d+)?[fF]?|\d+[eE][+-]?\d+(lf|LF)?/, { type: "double" } ),
+        new TokenMatcher( TokenType.Literal, /(\d+\.\d+|\d+\.|\.\d+)([eE][+-]?\d+)?(lf|LF)|\d+[eE][+-]?\d+(lf|LF)/, { type: "double" } ),
         new TokenMatcher( TokenType.Literal, /(\d+\.\d+|\d+\.|\.\d+)([eE][+-]?\d+)?[fF]?|\d+[eE][+-]?\d+[fF]?/, { type: "float" } ),
         new TokenMatcher( TokenType.Literal, /(0[0-7]+|\d+|0[xX][0-9a-fA-F]+)[uU]/, { type: "uint" } ),
         new TokenMatcher( TokenType.Literal, /0[0-7]+|\d+|0[xX][0-9a-fA-F]+/, { type: "int" } ),
