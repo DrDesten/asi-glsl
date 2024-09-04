@@ -9,5 +9,5 @@ void main() {
     var2 = var2[;
     var2 = var2]
 
-    ;;;;;;;;;
+    var3 = (1, 2 3;
 }

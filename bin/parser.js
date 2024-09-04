@@ -414,6 +414,15 @@ class TypeVisitor extends NodeVisitor {
 }
 
 
+// Hints
+
+class Hint {
+    constructor( type ) {
+        
+    }
+}
+
+
 // Parser
 
 class Edit {
@@ -1184,7 +1193,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
     function parseLiteralExpr() {
         if ( advanceIf( TokenType.ParenOpen ) ) {
             const expr = parseExpr()
-            advance( TokenType.ParenClose )
+            expect( ")" )
             return expr
         }
 
