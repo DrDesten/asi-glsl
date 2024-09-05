@@ -912,12 +912,8 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
             advance( TokenType.Semicolon )
         }
 
-        // TODO: handle missing loop expr better
-        let loopExpr = null
-        if ( !advanceIf( TokenType.ParenClose ) ) {
-            loopExpr = parseExpr()
-            expect( TokenType.ParenClose )
-        }
+        let loopExpr = parseExpr()
+        expect( TokenType.ParenClose )
 
         const body = parseStmt()
         return new ForStmt( initExpr, condition, loopExpr, body )
@@ -1010,7 +1006,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         if ( peek().type === TokenType.Operator && peek().props.operator.has( "conditional" ) ) {
             advance( TokenType.Operator )
             const trueExpr = parseExpr()
-            advance( TokenType.Colon )
+            expect( TokenType.Colon )
             return new ConditionalExpr( condition, trueExpr, parseAssignmentExpr() )
         }
         return condition
