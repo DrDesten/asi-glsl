@@ -53,52 +53,57 @@ function formatter( document ) {
     const edits = []
     const documentText = document.getText()
 
-    if ( addSemicolons || addColons || addParentheses ) {
+    const options = {
+        addSemicolons,
+        addInlineSemicolons,
+        addColons,
+        addParentheses,
+        addCommas: false,
+        addExplicitTypeConversions
+    }
 
-        const options = {
-            addSemicolons,
-            addInlineSemicolons,
-            addColons,
-            addParentheses,
-            addCommas: false,
-            addExplicitTypeConversions
+    try {
+
+        const lexer = GLSLLexer()
+        const tokens = lexer.lex( documentText )
+        const { edits: parserEdits, counts } = Parse( tokens, options )
+        console.log( parserEdits )
+
+        const names = {
+            ";": ["Semicolon", "Semicolons"],
+            type: ["Explicit Type Conversion", "Explicit Type Conversions"]
+        }
+        for ( const edit of parserEdits ) {
+            edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
         }
 
-        try {
+        {
+            const namedResults = Object.entries( names )
+                .filter( ( [key] ) => counts.has( key ) )
+                .map( ( [key, name, count = counts.get( key )] ) => `${count} ${name[+( count !== 1 )]}` )
+            const namedMessage = namedResults.length
+                ? "added " + ( namedResults.length === 1
+                    ? namedResults[0]
+                    : namedResults.slice( 0, -1 ).join( ", " ) + " and " + namedResults.at( -1 ) )
+                : ""
 
-            const lexer = GLSLLexer()
-            const tokens = lexer.lex( documentText )
-            const { edits: parserEdits, counts } = Parse( tokens, options )
-            console.log( parserEdits )
+            const otherNames = namedMessage ? ["other change", "other changes"] : ["change", "changes"]
+            const otherResult = [...counts.entries()]
+                .filter( ( [key] ) => !( key in names ) )
+                .reduce( ( sum, [, value] ) => sum + value, 0 )
+            const otherMessage = otherResult
+                ? `made ${otherResult} ${otherNames[+( otherResult !== 1 )]}`
+                : ""
 
-            const names = {
-                ";": ["Semicolon", "Semicolons"],
-                type: ["Explicit Type Conversion", "Explicit Type Conversions"]
-            }
-            for ( const edit of parserEdits ) {
-                edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
-            }
-
-            if ( Math.max( ...counts.values() ) > 0 ) {
-                const entries = [...counts.entries()]
-                const results = entries.filter( ( [k] ) => k in names )
-                    .map( ( [key, count] ) => `${count} ${names[key][+( count !== 1 )]}` )
-                const other = entries.filter( ( [k] ) => !( k in names ) )
-                    .reduce( ( sum, [_, x] ) => sum + x, 0 )
-                if ( other ) results.push( `${other} changes` )
-                const message = "Added "
-                    + results.length === 1
-                    ? results[0]
-                    : results.slice( 0, -1 ).join( ", " ) + " and " + results.at( -1 )
-                vscode.window.showInformationMessage( message )
-            }
-
-        } catch ( e ) {
-
-            console.error( e )
-            vscode.window.showErrorMessage( `ASI for GLSL failed to parse file and/or edits.` )
-
+            let message = [namedMessage, otherMessage].filter( Boolean ).join( ", " )
+            message = "ASI: " + message[0].toUpperCase() + message.slice( 1 )
+            vscode.window.showInformationMessage( message )
         }
+
+    } catch ( e ) {
+
+        console.error( e )
+        vscode.window.showErrorMessage( `ASI for GLSL failed to parse file and/or edits.` )
 
     }
 
