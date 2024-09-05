@@ -418,7 +418,7 @@ class TypeVisitor extends NodeVisitor {
 
 class Hint {
     constructor( type ) {
-        
+
     }
 }
 
@@ -457,7 +457,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         addParentheses,
         addCommas,
         addExplicitTypeConversions,
-    } = options;
+    } = options
 
     /** @type {{[key: string]: () => boolean}} */
     const expectFilter = {
@@ -469,7 +469,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
     /** @type {Map<string,number>} */
     const Counts = new Map
-    Counts.inc = function( key ) { this.set( key, ( this.get( key ) ?? 0 ) + 1 ) }
+    Counts.inc = function ( key ) { this.set( key, ( this.get( key ) ?? 0 ) + 1 ) }
 
     /** @type {Edit[]} */
     const edits = []
@@ -481,7 +481,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         counts: Counts
     }
 
-    function warn( ...args ) { console.warn( ...args) }
+    function warn( ...args ) { console.warn( ...args ) }
 
     function eof() {
         let i = index
@@ -532,13 +532,13 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         if ( !checkCondition( token, ...conditions ) ) {
             let { line, column } = token.position
             let message = `Expected Token of type(s) ${conditions.join( " and " )}\n`
-                        + `Got Token of type ${token.type.toString()} and text of "${token.text}"\n`
-                        + `At: l:${line} c: ${column}\n\n`
+                + `Got Token of type ${token.type.toString()} and text of "${token.text}"\n`
+                + `At: l:${line} c: ${column}\n\n`
 
-            let lines = tokens.text.split(/\r?\n/g)
-            if (lines[line - 2] !== undefined) message += ` | ${lines[line - 2]}\n`
-            if (lines[line - 1] !== undefined) message += ` > ${lines[line - 1]}\n`
-            if (lines[line + 0] !== undefined) message += ` | ${lines[line + 0]}\n`
+            let lines = tokens.text.split( /\r?\n/g )
+            if ( lines[line - 2] !== undefined ) message += ` | ${lines[line - 2]}\n`
+            if ( lines[line - 1] !== undefined ) message += ` > ${lines[line - 1]}\n`
+            if ( lines[line + 0] !== undefined ) message += ` | ${lines[line + 0]}\n`
             throw new Error( message )
         }
         index += calcOffset( 0 )
@@ -568,7 +568,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         return null
     }
     function expectSemicolon() {
-        if ( advanceIf(TokenType.Semicolon) ) {
+        if ( advanceIf( TokenType.Semicolon ) ) {
             while ( advanceIf( TokenType.Semicolon ) ) {}
             return
         }
@@ -578,7 +578,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
                 tokens[index - 1].range.end.index,
                 ";"
             ) )
-            Counts.inc(";")
+            Counts.inc( ";" )
         }
     }
 
@@ -741,7 +741,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
                         const end = peek( -1 )
                         edits.push( new Edit( start, start.range.start.index, `${expectedType.identifier()}(` ) )
                         edits.push( new Edit( end, end.range.end.index, `)` ) )
-                        Counts.inc("type")
+                        Counts.inc( "type" )
                     }
                 }
             }
@@ -812,9 +812,9 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
             case TokenType.Discard: return parseDiscard()
             default: {
                 const expr = parseExpr()
-                if (!expr) {
+                if ( !expr ) {
                     const token = advance()
-                    warn("Skipping Token", token)
+                    warn( "Skipping Token", token )
                 }
                 const stmt = new ExpressionStmt( expr )
                 expectSemicolon()
@@ -1198,7 +1198,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         }
 
         const token = advanceIf( TokenType.Literal, TokenType.Identifier )
-        if (!token) return null
+        if ( !token ) return null
 
         return token.type === TokenType.Literal
             ? new LiteralExpr( token )
