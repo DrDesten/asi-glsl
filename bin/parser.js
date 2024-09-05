@@ -567,21 +567,28 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
     /** @param {keyof (typeof TokenText)} token */
     function expect( token ) {
-        if ( peek().type === token ) {
-            return advance()
-        }
+        if ( advanceIf( token ) ) return null
         if ( expectFilter[token]?.() ?? true ) {
             const text = TokenText[token]
             if ( !text ) throw new Error( `No Text for Token: ${token}` )
 
             Counts.inc( text )
-            edits.push( new Edit(
+            const edit = new Edit(
                 tokens[index - 1],
                 tokens[index - 1].range.end.index,
                 text
-            ) )
+            )
+            edits.push( edit )
+            return edit
         }
         return null
+    }
+    /** @param {Edit?} edit */
+    function undoExpect( edit ) {
+        if ( !edit ) return
+        const idx = edits.indexOf( edit )
+        if ( idx === -1 ) return
+        edits.splice( idx, 1 )
     }
     function expectSemicolon() {
         if ( advanceIf( TokenType.Semicolon ) ) {
@@ -898,18 +905,14 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         expect( TokenType.ParenOpen )
 
         let initExpr = null
-        if ( peek().type !== TokenType.Semicolon ) {
+        if ( !advanceIf( TokenType.Semicolon ) ) {
             initExpr = parseDecl() // parseDecl already expects a semicolon
-        } else {
-            advance( TokenType.Semicolon )
         }
 
         let condition = null
-        if ( peek().type !== TokenType.Semicolon ) {
+        if ( !advanceIf( TokenType.Semicolon ) ) {
             condition = parseExpr()
             expectSemicolon()
-        } else {
-            advance( TokenType.Semicolon )
         }
 
         let loopExpr = parseExpr()
@@ -1171,12 +1174,17 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
                     // Call with arguments
                     const callargs = []
+                    let lastComma = null
                     while ( true ) {
                         const argexpr = parseAssignmentExpr()
-                        if ( !argexpr ) { expect( TokenType.ParenClose ); break }
+                        if ( !argexpr ) {
+                            undoExpect( lastComma )
+                            expect( TokenType.ParenClose )
+                            break
+                        }
                         callargs.push( argexpr )
                         if ( advanceIf( TokenType.ParenClose ) ) break
-                        expect( TokenType.Comma )
+                        lastComma = expect( TokenType.Comma )
                     }
                     expr = new CallExpression( expr, callargs )
                     continue

@@ -77,7 +77,7 @@ function formatter( document ) {
             edits.push( vscode.TextEdit.insert( document.positionAt( edit.index ), edit.text ) )
         }
 
-        {
+        if ( parserEdits.length ) {
             const namedResults = Object.entries( names )
                 .filter( ( [key] ) => counts.has( key ) )
                 .map( ( [key, name, count = counts.get( key )] ) => `${count} ${name[+( count !== 1 )]}` )
@@ -103,7 +103,7 @@ function formatter( document ) {
     } catch ( e ) {
 
         console.error( e )
-        vscode.window.showErrorMessage( `ASI for GLSL failed to parse file and/or edits.` )
+        vscode.window.showErrorMessage( `ASI: failed to parse file.` )
 
     }
 
