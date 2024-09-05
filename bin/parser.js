@@ -434,6 +434,18 @@ class Edit {
     }
 }
 
+const TokenText = {
+    [TokenType.Semicolon]: ";",
+    [TokenType.Colon]: ":",
+    [TokenType.Comma]: ",",
+    [TokenType.ParenOpen]: "(",
+    [TokenType.ParenClose]: ")",
+    [TokenType.BrackOpen]: "[",
+    [TokenType.BrackClose]: "]",
+    [TokenType.BraceOpen]: "{",
+    [TokenType.BraceClose]: "}",
+}
+
 /** 
  * Parses a Token Stream produced by Lexer
  * REQUIRES Newlines to be merged
@@ -553,11 +565,15 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         return null
     }
 
-    function expect( text ) {
-        if ( peek().text === text ) {
+    /** @param {keyof (typeof TokenText)} token */
+    function expect( token ) {
+        if ( peek().type === token ) {
             return advance()
         }
-        if ( expectFilter[text]?.() ?? true ) {
+        if ( expectFilter[token]?.() ?? true ) {
+            const text = TokenText[token]
+            if ( !text ) throw new Error( `No Text for Token: ${token}` )
+
             Counts.inc( text )
             edits.push( new Edit(
                 tokens[index - 1],
@@ -636,12 +652,8 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         const name = advance( TokenType.Identifier )
         const array = []
         while ( advanceIf( TokenType.BrackOpen ) ) {
-            if ( advanceIf( TokenType.BrackClose ) ) {
-                array.push( null )
-            } else {
-                array.push( parseExpr() )
-                advance( TokenType.BrackClose )
-            }
+            array.push( parseExpr() )
+            expect( TokenType.BrackClose )
         }
         return { name, array }
     }
@@ -650,12 +662,8 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         const name = advance( TokenType.Identifier )
         const array = []
         while ( advanceIf( TokenType.BrackOpen ) ) {
-            if ( advanceIf( TokenType.BrackClose ) ) {
-                array.push( null )
-            } else {
-                array.push( parseExpr() )
-                advance( TokenType.BrackClose )
-            }
+            array.push( parseExpr() )
+            expect( TokenType.BrackClose )
         }
         return { name, array }
     }
@@ -837,9 +845,9 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
     function parseIf() {
         advance( TokenType.If )
-        expect( "(" )
+        expect( TokenType.ParenOpen )
         const condition = parseExpr()
-        expect( ")" )
+        expect( TokenType.ParenClose )
 
         const ifBlock = parseStmt()
         let elseBlock = null
@@ -852,16 +860,16 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
     function parseSwitch() {
         advance( TokenType.Switch )
-        expect( "(" )
+        expect( TokenType.ParenOpen )
         const switchCondition = parseExpr()
-        expect( ")" )
+        expect( TokenType.ParenClose )
 
         advance( TokenType.BraceOpen )
         const cases = []
         while ( !advanceIf( TokenType.BraceClose ) ) {
             if ( advanceIf( TokenType.Case ) ) {
                 const caseCondition = parseExpr()
-                expect( ":" )
+                expect( TokenType.Colon )
 
                 const body = []
                 while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.BraceClose ) {
@@ -873,7 +881,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
             }
 
             advance( TokenType.Default )
-            expect( ":" )
+            expect( TokenType.Colon )
 
             const body = []
             while ( peek().type !== TokenType.Case && peek().type !== TokenType.Default && peek().type !== TokenType.BraceClose ) {
@@ -887,7 +895,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
     function parseFor() {
         advance( TokenType.For )
-        expect( "(" )
+        expect( TokenType.ParenOpen )
 
         let initExpr = null
         if ( peek().type !== TokenType.Semicolon ) {
@@ -908,7 +916,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         let loopExpr = null
         if ( !advanceIf( TokenType.ParenClose ) ) {
             loopExpr = parseExpr()
-            expect( ")" )
+            expect( TokenType.ParenClose )
         }
 
         const body = parseStmt()
@@ -917,9 +925,9 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
 
     function parseWhile() {
         advance( TokenType.While )
-        expect( "(" )
+        expect( TokenType.ParenOpen )
         const condition = parseExpr()
-        expect( ")" )
+        expect( TokenType.ParenClose )
         const body = parseStmt()
         return new WhileStmt( condition, body )
     }
@@ -928,9 +936,9 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
         advance( TokenType.Do )
         const body = parseStmt()
         advance( TokenType.While )
-        expect( "(" )
+        expect( TokenType.ParenOpen )
         const condition = parseExpr()
-        expect( ")" )
+        expect( TokenType.ParenClose )
         expectSemicolon()
         return new DoWhileStmt( condition, body )
     }
@@ -1150,7 +1158,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
                 case TokenType.BrackOpen: {
                     advance( TokenType.BrackOpen )
                     const indexexpr = parseExpr()
-                    expect( "]" )
+                    expect( TokenType.BrackClose )
                     expr = new IndexExpr( expr, indexexpr )
                     continue
                 }
@@ -1169,10 +1177,10 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
                     const callargs = []
                     while ( true ) {
                         const argexpr = parseAssignmentExpr()
-                        if ( !argexpr ) { expect( ")" ); break }
+                        if ( !argexpr ) { expect( TokenType.ParenClose ); break }
                         callargs.push( argexpr )
                         if ( advanceIf( TokenType.ParenClose ) ) break
-                        expect( "," )
+                        expect( TokenType.Comma )
                     }
                     expr = new CallExpression( expr, callargs )
                     continue
@@ -1193,7 +1201,7 @@ function Parse( tokens, options = new Proxy( {}, { get: () => true } ) ) {
     function parseLiteralExpr() {
         if ( advanceIf( TokenType.ParenOpen ) ) {
             const expr = parseExpr()
-            expect( ")" )
+            expect( TokenType.ParenClose )
             return expr
         }
 
